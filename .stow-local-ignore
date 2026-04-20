@@ -1,4 +1,5 @@
 .*.md
+.*.wav
 .deps.lock
 .git
 .root
