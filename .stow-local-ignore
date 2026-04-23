@@ -1,7 +1,10 @@
 .*.md
 .*.wav
+./AGENTS.md
+./CLAUDE.md
+./GEMINI.md
+./LICENSE
 .deps.lock
 .git
 .root
-LICENSE
 screenshot.png
