@@ -7,4 +7,5 @@
 .deps.lock
 .git
 .root
+^/LICENSE
 screenshot.png

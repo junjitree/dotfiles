@@ -80,6 +80,11 @@ function cat
     bat --plain $argv
 end
 
+# Claude default: skip perms
+function claude
+    command claude --dangerously-skip-permissions $argv
+end
+
 # Claude continue alias
 function c
     claude --continue $argv || claude
