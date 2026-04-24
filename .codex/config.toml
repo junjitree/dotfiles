@@ -1,16 +1,38 @@
-notify = ["sh", "-c", "exec \"$HOME/.local/bin/.rick\" \"$@\"", "_"]
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+approvals_reviewer = "guardian_subagent"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+[projects."/home/julius/Projects/crawly-mccrawlface"]
+trust_level = "trusted"
 
-[profiles.ollama-launch]
-openai_base_url = "http://pc.mx.kryptic.sh:11434/v1/"
-forced_login_method = "api"
-model_provider = "ollama-launch"
+[projects."/home/julius/Projects/rusty-data"]
+trust_level = "trusted"
 
-[model_providers.ollama-launch]
-name = "Ollama"
-base_url = "http://pc.mx.kryptic.sh:11434/v1/"
+[projects."/home/julius/Projects/deepci-website"]
+trust_level = "trusted"
 
-[projects."/home/mxaddict"]
+[projects."/home/julius/Projects/deepci-website/admin.api.pmi"]
+trust_level = "trusted"
+
+[projects."/home/julius/Projects/admin.api.pmi"]
+trust_level = "trusted"
+
+[projects."/home/julius/Projects/admin.app.pmi"]
+trust_level = "trusted"
+
+[projects."/home/julius/.files"]
 trust_level = "trusted"
 
 [tui]
-theme = "nord"
+status_line = [
+  "model-with-reasoning",
+  "current-dir",
+  "five-hour-limit",
+  "weekly-limit",
+  "git-branch",
+]
+
+[features]
+memories = true
+guardian_approval = true
