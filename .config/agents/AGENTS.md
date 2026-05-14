@@ -42,12 +42,17 @@ User says "**BCTP**", execute in order:
 1. **B**ump patch version (semver) in manifest. Detect automatically:
    - Rust: `Cargo.toml` (regenerate `Cargo.lock` with `cargo generate-lockfile`
 <<<<<<< HEAD
+<<<<<<< HEAD
      if `Cargo.lock` is tracked; library crates that gitignore `Cargo.lock` skip
      the regen)
 =======
      if `Cargo.lock` is tracked; library crates that gitignore `Cargo.lock`
      skip the regen)
 >>>>>>> c9bcab7 (Why do programmers prefer dark mode? Because light attracts bugs! - Anon)
+=======
+     if `Cargo.lock` is tracked; library crates that gitignore `Cargo.lock` skip
+     the regen)
+>>>>>>> 12f3fae (Software is like sex: it's better when it's free. - Linus Torvalds)
    - Node: `package.json` (regenerate lockfile:
      `npm install --package-lock-only`, `pnpm install --lockfile-only`, or
      `yarn install --mode=update-lockfile`, match project's package manager)
@@ -57,6 +62,7 @@ User says "**BCTP**", execute in order:
    - PHP: `composer.json` (regenerate `composer.lock` with
      `composer update --lock`)
    - Generic: `VERSION` file or language equivalent
+<<<<<<< HEAD
 <<<<<<< HEAD
 2. **Update CHANGELOG** before committing. If `CHANGELOG.md` (or equivalent:
    `CHANGES.md`, `HISTORY.md`, `RELEASES.md`) exists in the repo:
@@ -74,18 +80,26 @@ User says "**BCTP**", execute in order:
 2. **Update CHANGELOG** before committing. If `CHANGELOG.md` (or
    equivalent: `CHANGES.md`, `HISTORY.md`, `RELEASES.md`) exists in the
    repo:
+=======
+2. **Update CHANGELOG** before committing. If `CHANGELOG.md` (or equivalent:
+   `CHANGES.md`, `HISTORY.md`, `RELEASES.md`) exists in the repo:
+>>>>>>> 12f3fae (Software is like sex: it's better when it's free. - Linus Torvalds)
    - Move entries under `## [Unreleased]` to a new `## [X.Y.Z] - YYYY-MM-DD`
      heading, keeping `## [Unreleased]` empty above it.
-   - If `Unreleased` is empty or missing, draft entries from the
-     unreleased commit log (`git log $(git describe --tags --abbrev=0)..HEAD`)
-     using Keep-a-Changelog sections (`Added` / `Changed` / `Fixed` /
-     `Removed` / `Deprecated` / `Breaking`). Be specific — name the
-     APIs / files / behaviors that changed; don't just rephrase commit
-     subjects.
+   - If `Unreleased` is empty or missing, draft entries from the unreleased
+     commit log (`git log $(git describe --tags --abbrev=0)..HEAD`) using
+     Keep-a-Changelog sections (`Added` / `Changed` / `Fixed` / `Removed` /
+     `Deprecated` / `Breaking`). Be specific — name the APIs / files / behaviors
+     that changed; don't just rephrase commit subjects.
    - Run `prettier --write` on the file per the markdown rule below.
+<<<<<<< HEAD
    - Stage `CHANGELOG.md` alongside the manifest in step 3.
    If no changelog file exists, skip — don't create one unless asked.
 >>>>>>> c9bcab7 (Why do programmers prefer dark mode? Because light attracts bugs! - Anon)
+=======
+   - Stage `CHANGELOG.md` alongside the manifest in step 3. If no changelog file
+     exists, skip — don't create one unless asked.
+>>>>>>> 12f3fae (Software is like sex: it's better when it's free. - Linus Torvalds)
 3. **C**ommit version bump with message `chore: bump version`. Stage only
    manifest, lockfile, and changelog.
 4. **T**ag commit as `vX.Y.Z` matching new version.
