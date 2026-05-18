@@ -1,15 +1,16 @@
+<<<<<<< HEAD
 [user]
 	name = junji
 	email = juliusj.puno@gmail.com
 	signingkey = juliusj.puno@gmail.com
+=======
+>>>>>>> mxaddict/main
 [color]
 	ui = true
 [core]
 	excludesfile = ~/.gitignore
 [pull]
 	rebase = false
-[commit]
-	gpgsign = true
 [push]
 	autoSetupRemote = true
 [fetch]
@@ -24,3 +25,5 @@
 [credential "https://gist.github.com"]
 	helper =
 	helper = !/usr/bin/gh auth git-credential
+[include]
+	path = ~/.gitconfig.local
