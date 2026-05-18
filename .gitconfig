@@ -1,10 +1,7 @@
-<<<<<<< HEAD
 [user]
 	name = junji
 	email = juliusj.puno@gmail.com
 	signingkey = juliusj.puno@gmail.com
-=======
->>>>>>> mxaddict/main
 [color]
 	ui = true
 [core]
