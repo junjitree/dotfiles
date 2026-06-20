@@ -139,6 +139,11 @@ function lg
     lazygit $argv
 end
 
+# Wake junji-pc via Pi on tailnet
+function wakepc
+    ssh junji@100.64.0.5 "~/wakepc.sh"
+end
+
 # Alias for quick and dirty git commit
 function gg
     set -l msg (quoty)
