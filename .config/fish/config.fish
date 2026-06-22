@@ -97,6 +97,12 @@ function cw
     claude --continue $argv || claude
 end
 
+# Claude second work account (separate config dir)
+function cww
+    set -lx CLAUDE_CONFIG_DIR $HOME/.claude-work-work
+    claude --continue $argv || claude
+end
+
 # Opencode continue alias
 function o
     opencode --continue $argv || opencode
