@@ -37,6 +37,7 @@
 .config/fish/functions/*
 !.config/fish/functions/wakepc.fish
 !.config/fish/functions/bootwin.fish
+!.config/fish/functions/bootarch.fish
 .config/gtk-3.0/assets/
 .config/hypr/apps.conf
 .config/hypr/hyprpaper.conf
