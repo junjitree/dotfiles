@@ -34,7 +34,8 @@
 .config/fish/completions/
 .config/fish/conf.d/
 .config/fish/fish_variables
-.config/fish/functions/
+.config/fish/functions/*
+!.config/fish/functions/wakepc.fish
 .config/gtk-3.0/assets/
 .config/hypr/apps.conf
 .config/hypr/hyprpaper.conf
