@@ -6,7 +6,7 @@
 echo "Pulling all models configured in opencode..."
 
 # Extract model names from the opencode.json file
-MODEL_LIST=$(jq -r '.provider.ollama.models | keys[]' "$HOME/.files/.config/opencode/opencode.json")
+MODEL_LIST=$(jq -r '.provider.ollama.models | keys[]' "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/opencode.json")
 
 # Counter for progress
 COUNT=0

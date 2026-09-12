@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # vi: ft=bash
 
+# Regenerate the emoji list in the dotfiles repo, then redeploy it. krypt
+# copies rather than symlinks, so writing the source alone would leave the
+# deployed ~/.local/share/emojis stale until the next link.
+REPO="${XDG_CONFIG_HOME:-$HOME/.config}/krypt/repo"
+
 curl -SsL https://raw.githubusercontent.com/muan/emojilib/v4.0.0/dist/emoji-en-US.json |
     jq --raw-output '. | to_entries | .[] | .key + " " + (.value | join(" ") | sub("_"; " "; "g"))' \
-        >"$HOME/.files/.local/share/emojis"
+        >"$REPO/.local/share/emojis"
+
+(cd "$REPO" && krypt link >/dev/null)
