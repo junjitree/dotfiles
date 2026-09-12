@@ -225,14 +225,7 @@ if             = "command_exists:rustup"
 run            = ["rustup", "default", "stable"]
 ignore_failure = true
 
-# Install cargo tools used by the dotfiles workflow (quoty, fnm, rtk).
-[[hook]]
-name           = "cargo-install-quoty"
-when           = "post-update"
-if             = "command_exists:cargo"
-run            = ["cargo", "install", "quoty"]
-ignore_failure = true
-
+# Install cargo tools used by the dotfiles workflow (fnm, rtk).
 [[hook]]
 name           = "cargo-install-fnm"
 when           = "post-update"

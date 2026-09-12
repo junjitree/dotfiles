@@ -13,11 +13,15 @@ Claude Code" footer. No "Co-Authored-By: Claude" lines.
 
 ## Commit Messages
 
-Use `git commit -m "$(quoty)"` only in the dotfiles repo
-(`~/.config/krypt/repo`). All other repos: Conventional Commits format —
+Conventional Commits format in every repo, dotfiles included —
 `type(scope): message` (e.g. `feat(auth): add OAuth flow`,
 `fix(api): handle null token`, `docs: update README`). Scope optional. Types:
 feat, fix, docs, style, refactor, test, chore, perf, ci, build.
+
+Write a real subject line describing what changed. Never generate a commit
+message from a quote tool; a random quote says nothing about the diff when
+you're reading `git log` months later. Use the body to explain _why_ whenever
+the reason isn't obvious from the diff alone.
 
 ## Prettier for all
 
