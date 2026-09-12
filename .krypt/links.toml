@@ -84,6 +84,10 @@ src = ".config/hypr/exfil.png"
 dst = "${XDG_CONFIG}/hypr/exfil.png"
 
 [[link]]
+src = ".config/hypr/suisei.png"
+dst = "${XDG_CONFIG}/hypr/suisei.png"
+
+[[link]]
 src_glob = ".config/lazygit/**/*"
 dst = "${XDG_CONFIG}/lazygit/"
 
