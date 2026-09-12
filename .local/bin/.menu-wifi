@@ -7,11 +7,23 @@ pikr_kill() {
     pkill -9 pikr
 }
 
+# Toggle: a second launch while the picker is open closes it.
 pikr_kill && exit 0
+
+# Serialise the rest. Before the picker exists there is nothing for the
+# toggle above to kill, so a second click during the list build used to fall
+# through and start a second menu. The lock is held until this run exits
+# (the fd closes), and the toggle path above never needs it.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/menu-wifi.lock"
+flock -n 9 || exit 0
 
 lock=
 
-ssids=$(nmcli -g ssid device wifi list | sort | uniq)
+# One scan-list query. The per-SSID lookups below read from this table
+# instead of re-running nmcli three times per network, which was ~300 ms of
+# dead time before the picker could appear.
+scan=$(nmcli -g ssid,signal,bars,security device wifi list)
+ssids=$(cut -d : -f1 <<<"$scan" | sort | uniq)
 ssid_active=$(nmcli -g active,ssid dev wifi | grep '^yes' | cut -d: -f2)
 
 list=$(
@@ -19,9 +31,10 @@ list=$(
         if [[ $ssid == "SSID" || $ssid == "--" || $ssid == "" ]]; then
             continue
         fi
-        bars=$(nmcli -g ssid,bars device wifi list | grep -w -F "$ssid" | head -n 1 | cut -d : -f2 | sed 's/*/█/g')
-        signal=$(nmcli -g ssid,signal device wifi list | grep -w -F "$ssid" | head -n 1 | cut -d : -f2)
-        security=$(nmcli -g ssid,security device wifi list | grep -w -F "$ssid" | head -n 1 | cut -d : -f2 | sed 's/WPA[1]//g' | xargs)
+        row=$(grep -w -F "$ssid" <<<"$scan" | head -n 1)
+        signal=$(cut -d : -f2 <<<"$row")
+        bars=$(cut -d : -f3 <<<"$row" | sed 's/*/█/g')
+        security=$(cut -d : -f4 <<<"$row" | sed 's/WPA[1]//g' | xargs)
         icon=""
         if [[ $security != "" ]]; then
             icon=$lock
