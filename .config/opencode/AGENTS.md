@@ -13,11 +13,11 @@ Claude Code" footer. No "Co-Authored-By: Claude" lines.
 
 ## Commit Messages
 
-Use `git commit -m "$(quoty)"` only in the `.files` repo. All other repos:
-Conventional Commits format — `type(scope): message` (e.g.
-`feat(auth): add OAuth flow`, `fix(api): handle null token`,
-`docs: update README`). Scope optional. Types: feat, fix, docs, style, refactor,
-test, chore, perf, ci, build.
+Use `git commit -m "$(quoty)"` only in the dotfiles repo
+(`~/.config/krypt/repo`). All other repos: Conventional Commits format —
+`type(scope): message` (e.g. `feat(auth): add OAuth flow`,
+`fix(api): handle null token`, `docs: update README`). Scope optional. Types:
+feat, fix, docs, style, refactor, test, chore, perf, ci, build.
 
 ## Prettier for all
 
@@ -40,18 +40,18 @@ Rust project changes → always run cargo clippy, cargo fmt, cargo test after.
 User says "**BCTP**", execute in order:
 
 1. **B**ump patch version (semver) in manifest. Detect automatically:
-    - Rust: `Cargo.toml` (regenerate `Cargo.lock` with `cargo generate-lockfile`
-       if `Cargo.lock` is tracked; library crates that gitignore `Cargo.lock`
-       skip the regen)
-    - Node: `package.json` (regenerate lockfile:
-      `npm install --package-lock-only`, `pnpm install --lockfile-only`, or
-      `yarn install --mode=update-lockfile`, match project's package manager)
-    - Python: `pyproject.toml` / `setup.py` / `setup.cfg` (regenerate `uv.lock` /
-      `poetry.lock` if present)
-    - Go: module `version` tag (no manifest bump; tag suffices)
-    - PHP: `composer.json` (regenerate `composer.lock` with
-      `composer update --lock`)
-    - Generic: `VERSION` file or language equivalent
+   - Rust: `Cargo.toml` (regenerate `Cargo.lock` with `cargo generate-lockfile`
+     if `Cargo.lock` is tracked; library crates that gitignore `Cargo.lock` skip
+     the regen)
+   - Node: `package.json` (regenerate lockfile:
+     `npm install --package-lock-only`, `pnpm install --lockfile-only`, or
+     `yarn install --mode=update-lockfile`, match project's package manager)
+   - Python: `pyproject.toml` / `setup.py` / `setup.cfg` (regenerate `uv.lock` /
+     `poetry.lock` if present)
+   - Go: module `version` tag (no manifest bump; tag suffices)
+   - PHP: `composer.json` (regenerate `composer.lock` with
+     `composer update --lock`)
+   - Generic: `VERSION` file or language equivalent
 2. **Update CHANGELOG** before committing. If `CHANGELOG.md` (or equivalent:
    `CHANGES.md`, `HISTORY.md`, `RELEASES.md`) exists in the repo:
    - Move entries under `## [Unreleased]` to a new `## [X.Y.Z] - YYYY-MM-DD`
