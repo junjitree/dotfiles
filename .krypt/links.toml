@@ -268,3 +268,33 @@ dst = "${HOME}/.local/share/emojis"
 [[link]]
 src_glob = ".local/share/applications/**/*"
 dst = "${HOME}/.local/share/applications/"
+
+# --- LLM agent configs ---
+# Shared agent rules. `.claude/CLAUDE.md` and the `.claude-work/*` entries are
+# symlinks into here inside the repo; krypt resolves them and writes real files.
+[[link]]
+src_glob = ".config/agents/**/*"
+dst = "${XDG_CONFIG}/agents/"
+
+[[link]]
+src_glob = ".agents/**/*"
+dst = "${HOME}/.agents/"
+
+[[link]]
+src_glob = ".claude/**/*"
+dst = "${HOME}/.claude/"
+
+[[link]]
+src_glob = ".claude-work/**/*"
+dst = "${HOME}/.claude-work/"
+
+# AGENTS.md ends with `@RTK.md`, resolved relative to the *deployed* file.
+# Because krypt writes copies rather than symlinks, RTK.md must sit beside each
+# deployed CLAUDE.md or the include dangles.
+[[link]]
+src = ".config/agents/RTK.md"
+dst = "${HOME}/.claude/RTK.md"
+
+[[link]]
+src = ".config/agents/RTK.md"
+dst = "${HOME}/.claude-work/RTK.md"
