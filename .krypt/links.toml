@@ -131,9 +131,13 @@ dst = "${XDG_CONFIG}/waybar/"
 src_glob = ".config/xsettingsd/**/*"
 dst = "${XDG_CONFIG}/xsettingsd/"
 
+# User systemd units. waybar.service overrides the packaged unit, whose
+# Requisite=graphical-session.target Hyprland never activates; hyprland.conf
+# starts this one directly instead.
 [[link]]
-src = ".config/chromium-flags.conf"
-dst = "${XDG_CONFIG}/chromium-flags.conf"
+src_glob = ".config/systemd/user/**/*"
+dst = "${XDG_CONFIG}/systemd/user/"
+platform = "linux"
 
 [[link]]
 src = ".config/mimeapps.list"

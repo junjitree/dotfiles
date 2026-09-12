@@ -43,7 +43,10 @@
 .config/hypr/hyprpaper.conf
 .config/hypr/input.conf
 .config/hypr/monitors.conf
+.config/hypr/nvidia.conf
 .config/hypr/workspaces.conf
+.config/mpv/local.conf
+.config/chromium-flags.conf
 .config/nvim/lazy-lock.json
 .config/opencode/*
 .config/qutebrowser/autoconfig.yml

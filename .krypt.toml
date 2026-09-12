@@ -52,6 +52,27 @@ dst      = "${XDG_CONFIG}/hypr/monitors.conf"
 prompts  = []
 platform = "linux"
 
+# Per-machine GPU env, sourced unconditionally by hyprland.conf. Seeded empty so
+# the source= line resolves on non-NVIDIA machines.
+[[template]]
+src      = ".config/hypr/nvidia.template.conf"
+dst      = "${XDG_CONFIG}/hypr/nvidia.conf"
+prompts  = []
+platform = "linux"
+
+# Per-machine mpv overrides, included from the bottom of mpv.conf.
+[[template]]
+src     = ".config/mpv/local.template.conf"
+dst     = "${XDG_CONFIG}/mpv/local.conf"
+prompts = []
+
+# Chromium flags are templated rather than linked: the format has no include
+# mechanism, so per-machine GPU flags have to live in the file itself.
+[[template]]
+src     = ".config/chromium-flags.template.conf"
+dst     = "${XDG_CONFIG}/chromium-flags.conf"
+prompts = []
+
 # ---------------------------------------------------------------------------
 # [prompts.*] — wizard sections
 # ---------------------------------------------------------------------------

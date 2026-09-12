@@ -1,0 +1,18 @@
+# Overrides /usr/lib/systemd/user/waybar.service.
+# The packaged unit has Requisite=graphical-session.target, which Hyprland never
+# activates, so every start fails. This copy drops it; hyprland.conf starts the
+# unit directly at the right point in the session.
+[Unit]
+Description=Highly customizable Wayland bar for Sway and Wlroots based compositors
+Documentation=https://github.com/Alexays/Waybar/wiki/
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/waybar
+ExecReload=kill -SIGUSR2 $MAINPID
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

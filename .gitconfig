@@ -1,7 +1,5 @@
-[user]
-	name = junji
-	email = juliusj.puno@gmail.com
-	signingkey = juliusj.puno@gmail.com
+; Identity lives in ~/.gitconfig.local (seeded from .gitconfig.local.template,
+; never committed). See the [include] at the bottom of this file.
 [color]
 	ui = true
 [core]
