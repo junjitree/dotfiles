@@ -19,12 +19,18 @@ flock -n 9 || exit 0
 
 lock=
 
+# Read NetworkManager's cached scan results instead of waiting for a fresh
+# scan. With the default --rescan auto, nmcli blocks on a full hardware scan
+# whenever the cache is stale; on the T14's QCNFA765 that is ~7.7 s of
+# nothing on screen. The async rescan below refreshes the cache in the
+# background so the next open is current.
+nmcli device wifi rescan >/dev/null 2>&1
+
 # One scan-list query. The per-SSID lookups below read from this table
-# instead of re-running nmcli three times per network, which was ~300 ms of
-# dead time before the picker could appear.
-scan=$(nmcli -g ssid,signal,bars,security device wifi list)
+# instead of re-running nmcli three times per network.
+scan=$(nmcli --rescan no -g ssid,signal,bars,security device wifi list)
 ssids=$(cut -d : -f1 <<<"$scan" | sort | uniq)
-ssid_active=$(nmcli -g active,ssid dev wifi | grep '^yes' | cut -d: -f2)
+ssid_active=$(nmcli --rescan no -g active,ssid dev wifi | grep '^yes' | cut -d: -f2)
 
 list=$(
     while IFS= read -r ssid; do
