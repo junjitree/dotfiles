@@ -15,7 +15,7 @@ fish_add_path -g ~/.local/bin
 fish_add_path -g ~/.local/share/nvim/mason/bin
 
 # Set default editor to vim
-set -gx EDITOR nvim
+set -gx EDITOR hjkl
 
 # Disable MANGOHUD by default
 set -gx MANGOHUD 0
@@ -81,9 +81,19 @@ function cat
     bat --plain $argv
 end
 
+# Hrdr default: skip perms
+function hrdr
+    command hrdr --yolo $argv
+end
+
+# Codex default: skip approvals and sandbox
+function codex
+    command codex --dangerously-bypass-approvals-and-sandbox $argv
+end
+
 # Claude default: skip perms
 function claude
-    command claude --dangerously-skip-permissions $argv
+    command claude --dangerously-skip-permissions --remote-control $argv
 end
 
 # Claude continue alias
@@ -212,18 +222,18 @@ end
 
 # Replace tree command with eza
 function tree
-    eza --tree $argv
+    eza --tree -- $argv
 end
 
 # Some more ls
 function l
-    ls -lF $argv
+    ls -lF -- $argv
 end
 function la
-    ls -aF $argv
+    ls -aF -- $argv
 end
 function ll
-    ls -alF $argv
+    ls -alF -- $argv
 end
 
 # Clear alias
@@ -245,22 +255,22 @@ end
 
 # I want v to open vi and vi to open vim
 function n
-    nvim $argv
+    hjkl $argv
 end
 function nv
-    nvim $argv
+    hjkl $argv
 end
 function nvi
-    nvim $argv
+    hjkl $argv
 end
 function v
-    nvim $argv
+    hjkl $argv
 end
 function vi
-    nvim $argv
+    hjkl $argv
 end
 function vim
-    nvim $argv
+    hjkl $argv
 end
 
 # TokyoNight Color Palette
