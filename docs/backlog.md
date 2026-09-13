@@ -44,10 +44,6 @@ The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc and passes
 
 ## Open questions
 
-- **RTK**: upstream's AGENTS/Claude RTK wiring was dropped in the merge, but the
-  `cargo-install-rtk` hook in `.krypt.toml` and
-  `.config/opencode/plugins/rtk.ts` predate it and remain, so `krypt update`
-  still installs `rtk`. Keep or remove.
 - **Menu stacking**: audio, bluetooth and top menus open a new instance per
   click. `.menu-wifi` solves this with a flock lock plus debounce; a
   focus-or-launch wrapper would cover the others.
