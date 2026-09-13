@@ -1,6 +1,6 @@
 # Overrides /usr/lib/systemd/user/waybar.service.
 # The packaged unit has Requisite=graphical-session.target, which Hyprland never
-# activates, so every start fails. This copy drops it; hyprland.conf starts the
+# activates, so every start fails. This copy drops it; hyprland.lua starts the
 # unit directly at the right point in the session.
 [Unit]
 Description=Highly customizable Wayland bar for Sway and Wlroots based compositors

@@ -136,7 +136,7 @@ src_glob = ".config/xsettingsd/**/*"
 dst = "${XDG_CONFIG}/xsettingsd/"
 
 # User systemd units. waybar.service overrides the packaged unit, whose
-# Requisite=graphical-session.target Hyprland never activates; hyprland.conf
+# Requisite=graphical-session.target Hyprland never activates; hyprland.lua
 # starts this one directly instead.
 [[link]]
 src_glob = ".config/systemd/user/**/*"
