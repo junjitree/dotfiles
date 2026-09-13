@@ -36,26 +36,12 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "rtk hook claude"
-          }
-        ]
-      }
-    ]
-  },
+  "hooks": {},
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "caveman@caveman": true,
     "clangd-lsp@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,

@@ -295,14 +295,3 @@ dst = "${HOME}/.claude/"
 [[link]]
 src_glob = ".claude-work/**/*"
 dst = "${HOME}/.claude-work/"
-
-# AGENTS.md ends with `@RTK.md`, resolved relative to the *deployed* file.
-# Because krypt writes copies rather than symlinks, RTK.md must sit beside each
-# deployed CLAUDE.md or the include dangles.
-[[link]]
-src = ".config/agents/RTK.md"
-dst = "${HOME}/.claude/RTK.md"
-
-[[link]]
-src = ".config/agents/RTK.md"
-dst = "${HOME}/.claude-work/RTK.md"
