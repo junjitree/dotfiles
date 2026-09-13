@@ -10,8 +10,15 @@ pkill -9 nmcli
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/menu-wifi.lock"
 flock -n 9 || exit 0
 
-# Toggle: a second launch while the picker is open closes it.
-pkill -9 pikr && exit 0
+# Toggle: a later press while the picker is open closes it. A press within
+# 400 ms of it opening is a double-click, not a toggle — ignore it.
+stamp="${XDG_RUNTIME_DIR:-/tmp}/menu-wifi.opened"
+if pgrep -x pikr >/dev/null; then
+    opened=$(cat "$stamp" 2>/dev/null || echo 0)
+    (( $(date +%s%3N) - opened < 400 )) && exit 0
+    pkill -9 pikr
+    exit 0
+fi
 
 lock=
 
@@ -58,7 +65,9 @@ list=$(
 
 list=$(echo "$list" | sort -k1 -nr | cut -d : -f2- | column -t -s :)
 
-# Release the lock so a click while the picker is open can toggle it closed.
+# Record when the picker opens (for the double-click guard above), then
+# release the lock so a later press can toggle it closed.
+date +%s%3N > "$stamp"
 flock -u 9
 wifi=$(echo "$list" | pikr -d -p Wi-Fi)
 ssid=$(echo "$wifi" | cut -d '"' -f2)
