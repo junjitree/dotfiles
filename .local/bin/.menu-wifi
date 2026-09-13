@@ -78,7 +78,8 @@ list=$(
             icon=$lock
         fi
         mark="  "
-        [[ $ssid == "$ssid_active" ]] && mark="✓ "
+        # U+F00C, Nerd Font check: ✓ (U+2713) isn't in Hack Nerd Font Mono.
+        [[ $ssid == "$ssid_active" ]] && mark=$'\uf00c '
         echo "$signal:$mark\"$ssid\":$bars ($signal%):$icon"
     done <<<"$ssids"
 )
@@ -113,8 +114,11 @@ if [[ $picked == 10 && -n $ssid ]]; then
         exit
     fi
     date +%s%3N > "$stamp"
-    confirm=$(printf 'Forget\nCancel\n' | pikr -d -p "Forget $ssid?")
-    if [[ $confirm == Forget ]]; then
+    # Rows name the network: pikr ranks dmenu rows by frecency, so bare
+    # "Forget"/"Cancel" would float whichever was picked most to the top and
+    # a reflexive Enter could delete. Unique rows keep Keep first.
+    confirm=$(printf 'Keep %s\nForget %s\n' "$ssid" "$ssid" | pikr -d -p "Forget $ssid?")
+    if [[ $confirm == "Forget $ssid" ]]; then
         if out=$(nmcli connection delete "$profile" 2>&1); then
             notify "Forgot $ssid"
         else
@@ -133,16 +137,16 @@ fi
 if [[ $ssid == "$ssid_active" ]]; then
     active=$(nmcli -g NAME,TYPE connection show --active | awk -F: '$2 == "802-11-wireless" { print $1; exit }')
     date +%s%3N > "$stamp"
-    action=$(printf 'Disconnect\nForget\n' | pikr -d -p "$ssid")
+    action=$(printf 'Disconnect %s\nForget %s\n' "$ssid" "$ssid" | pikr -d -p "$ssid")
     case $action in
-    Disconnect)
+    "Disconnect $ssid")
         if out=$(nmcli connection down "$active" 2>&1); then
             notify "Disconnected from $ssid"
         else
             notify "Could not disconnect from $ssid: ${out#Error: }"
         fi
         ;;
-    Forget)
+    "Forget $ssid")
         if out=$(nmcli connection delete "$active" 2>&1); then
             notify "Forgot $ssid"
         else
