@@ -104,6 +104,13 @@ wifi=$(echo "$list" | pikr -d -p "$prompt" "${forget_key[@]}")
 picked=$?
 ssid=$(echo "$wifi" | cut -d '"' -f2)
 
+# Cancelled (Esc exits 1) or nothing chosen. Without this, an empty SSID falls
+# through: the security lookup `grep -F ""` matches the first row and a
+# password prompt opens for no network.
+if [[ -z $ssid || ($picked != 0 && $picked != 10) ]]; then
+    exit
+fi
+
 notify() {
     command -v notify-send >/dev/null && notify-send "Wi-Fi" "$1"
 }
