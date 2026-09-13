@@ -148,28 +148,8 @@ if [[ $picked == 10 && -n $ssid ]]; then
     exit
 fi
 
-# Selecting the network you're already on offers Disconnect / Forget. The
-# active profile's name can differ from the SSID, so act on the profile.
+# Already on it: nothing to do. (Forgetting it is Right on its row.)
 if [[ $ssid == "$ssid_active" ]]; then
-    active=$(nmcli -g NAME,TYPE connection show --active | awk -F: '$2 == "802-11-wireless" { print $1; exit }')
-    date +%s%3N > "$stamp"
-    action=$(printf 'Disconnect %s\nForget %s\n' "$ssid" "$ssid" | pikr -d -p "$ssid")
-    case $action in
-    "Disconnect $ssid")
-        if out=$(nmcli connection down "$active" 2>&1); then
-            notify "Disconnected from $ssid"
-        else
-            notify "Could not disconnect from $ssid: ${out#Error: }"
-        fi
-        ;;
-    "Forget $ssid")
-        if out=$(nmcli connection delete "$active" 2>&1); then
-            notify "Forgot $ssid"
-        else
-            notify "Could not forget $ssid: ${out#Error: }"
-        fi
-        ;;
-    esac
     exit
 fi
 
