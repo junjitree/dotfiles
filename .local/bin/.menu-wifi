@@ -71,27 +71,51 @@ date +%s%3N > "$stamp"
 flock -u 9
 wifi=$(echo "$list" | pikr -d -p Wi-Fi)
 ssid=$(echo "$wifi" | cut -d '"' -f2)
-security=$(echo "$wifi" | cut -d '"' -f3 | awk '{print $3}')
 
 if [[ $ssid == "" || $ssid == "$ssid_active" ]]; then
     exit
 fi
 
-connection=$(nmcli connection show | grep "wifi" | grep -w -F "$ssid" | awk '{print $1}' | head -n 1)
+# Security comes from the scan table, not the displayed row: the lock icon
+# column is empty, so parsing it made every network look open and secured
+# ones failed silently with "Secrets were required".
+security=$(grep -w -F "$ssid" <<<"$scan" | head -n 1 | cut -d : -f4 | xargs)
+
+notify() {
+    command -v notify-send >/dev/null && notify-send "Wi-Fi" "$1"
+}
+
+# Exact-name match on wifi profiles (names may contain spaces).
+connection=$(nmcli -g NAME,TYPE connection show | awk -F: -v s="$ssid" '$1 == s && $2 == "802-11-wireless" { print $1; exit }')
 if [[ -n "$connection" ]]; then
-    nmcli connection up "$ssid"
+    if out=$(nmcli connection up "$connection" 2>&1); then
+        notify "Connected to $ssid"
+    else
+        notify "Could not connect to $ssid: ${out#Error: }"
+    fi
     exit
 fi
 
 if [[ $security == "" ]]; then
-    nmcli device wifi connect "$ssid"
+    if out=$(nmcli device wifi connect "$ssid" 2>&1); then
+        notify "Connected to $ssid"
+    else
+        notify "Could not connect to $ssid: ${out#Error: }"
+    fi
     exit
 fi
 
-password=$(echo "" | pikr -d -p Password | xargs)
+password=$(echo "" | pikr -d -P -p "Password for $ssid" | xargs)
 if [[ -z $password ]]; then
     exit
 fi
 
-nmcli connection add type wifi con-name "$ssid" ssid "$ssid" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$password"
-nmcli connection up "$ssid"
+nmcli connection add type wifi con-name "$ssid" ssid "$ssid" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$password" >/dev/null 2>&1
+if out=$(nmcli connection up "$ssid" 2>&1); then
+    notify "Connected to $ssid"
+else
+    # Drop the failed profile so the next attempt asks for the password again
+    # instead of silently reusing a wrong one.
+    nmcli connection delete "$ssid" >/dev/null 2>&1
+    notify "Could not connect to $ssid: ${out#Error: }"
+fi
