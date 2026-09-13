@@ -49,22 +49,18 @@ fresh=false
 rescan_ok=false
 nmcli device wifi rescan >/dev/null 2>&1 && rescan_ok=true
 
-scan=$(read_scan)
-if $rescan_ok && { ! $fresh || [[ -z "${scan//[[:space:]]/}" ]]; }; then
-    pikr -e "Wi-Fi: scanning…" &
-    modal=$!
+wait_for_scan() {
     for _ in $(seq 1 60); do
         sleep 0.2
         [[ $(last_scan) != "$before" ]] && break
     done
-    kill "$modal" 2>/dev/null
-    scan=$(read_scan)
-fi
+}
 
-ssids=$(cut -d : -f1 <<<"$scan" | sort | uniq)
-ssid_active=$(nmcli -g active,ssid dev wifi list --rescan no | grep '^yes' | cut -d: -f2)
-
-list=$(
+# Rows for the picker, strongest first, from $scan.
+build_list() {
+    local ssids ssid_active ssid row signal bars security icon mark
+    ssids=$(cut -d : -f1 <<<"$scan" | sort | uniq)
+    ssid_active=$(nmcli -g active,ssid dev wifi list --rescan no | grep '^yes' | cut -d: -f2)
     while IFS= read -r ssid; do
         if [[ $ssid == "SSID" || $ssid == "--" || $ssid == "" ]]; then
             continue
@@ -79,30 +75,54 @@ list=$(
         fi
         mark="  "
         # U+F00C, Nerd Font check: ✓ (U+2713) isn't in Hack Nerd Font Mono.
-        [[ $ssid == "$ssid_active" ]] && mark=$'\uf00c '
+        [[ $ssid == "$ssid_active" ]] && mark=$' '
         echo "$signal:$mark\"$ssid\":$bars ($signal%):$icon"
-    done <<<"$ssids"
-)
+    done <<<"$ssids" | sort -k1 -nr | cut -d : -f2- | column -t -s :
+}
 
-list=$(echo "$list" | sort -k1 -nr | cut -d : -f2- | column -t -s :)
+pikr_help=$(pikr --help 2>/dev/null)
 
 # Right on a highlighted network opens a "Forget?" card; Enter forgets it
 # (pikr exits 10). Needs a pikr with --kb-custom KEY=PROMPT; stock pikr lacks
 # it, so detect instead of assuming.
 forget_key=()
 prompt="Wi-Fi"
-if pikr --help 2>/dev/null | grep -qF 'KEY[=PROMPT]'; then
+if grep -qF 'KEY[=PROMPT]' <<<"$pikr_help"; then
     forget_key=(--kb-custom 'Right=Forget?')
     prompt="Wi-Fi  (→ forget)"
+fi
+
+scan=$(read_scan)
+loading=()
+if $rescan_ok && { ! $fresh || [[ -z "${scan//[[:space:]]/}" ]]; }; then
+    if grep -qF -- '--loading' <<<"$pikr_help"; then
+        # Open the picker now with "Scanning…" where the list goes; the rows
+        # replace it when the scan lands and build_list closes pikr's stdin.
+        loading=(--loading "Scanning…")
+    else
+        pikr -e "Wi-Fi: scanning…" &
+        modal=$!
+        wait_for_scan
+        kill "$modal" 2>/dev/null
+        scan=$(read_scan)
+    fi
 fi
 
 # Record when the picker opens (for the double-click guard above), then
 # release the lock so a later press can toggle it closed.
 date +%s%3N > "$stamp"
 flock -u 9
-wifi=$(echo "$list" | pikr -d -p "$prompt" "${forget_key[@]}")
+if ((${#loading[@]})); then
+    wifi=$( { wait_for_scan; scan=$(read_scan); build_list; } | pikr -d -p "$prompt" "${loading[@]}" "${forget_key[@]}")
+else
+    wifi=$(build_list | pikr -d -p "$prompt" "${forget_key[@]}")
+fi
 picked=$?
 ssid=$(echo "$wifi" | cut -d '"' -f2)
+# With --loading the rows were built from a scan read inside the producer's
+# subshell; re-read it here for the security lookup and the active network.
+scan=$(read_scan)
+ssid_active=$(nmcli -g active,ssid dev wifi list --rescan no | grep '^yes' | cut -d: -f2)
 
 # Cancelled (Esc exits 1) or nothing chosen. Without this, an empty SSID falls
 # through: the security lookup `grep -F ""` matches the first row and a
