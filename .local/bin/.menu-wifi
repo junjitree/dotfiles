@@ -90,10 +90,17 @@ connection=$(nmcli -g NAME,TYPE connection show | awk -F: -v s="$ssid" '$1 == s 
 if [[ -n "$connection" ]]; then
     if out=$(nmcli connection up "$connection" 2>&1); then
         notify "Connected to $ssid"
+        exit
+    fi
+    # A profile with no stored secret can't activate. The old open-network
+    # path used to leave these behind; drop it and fall through to the
+    # password prompt instead of failing every time.
+    if grep -qi 'secrets' <<<"$out"; then
+        nmcli connection delete "$connection" >/dev/null 2>&1
     else
         notify "Could not connect to $ssid: ${out#Error: }"
+        exit
     fi
-    exit
 fi
 
 if [[ $security == "" ]]; then
