@@ -59,7 +59,9 @@ list=$(
         if [[ $security != "" ]]; then
             icon=$lock
         fi
-        echo "$signal:\"$ssid\":$bars ($signal%):$icon"
+        mark="  "
+        [[ $ssid == "$ssid_active" ]] && mark="✓ "
+        echo "$signal:$mark\"$ssid\":$bars ($signal%):$icon"
     done <<<"$ssids"
 )
 
@@ -72,7 +74,36 @@ flock -u 9
 wifi=$(echo "$list" | pikr -d -p Wi-Fi)
 ssid=$(echo "$wifi" | cut -d '"' -f2)
 
-if [[ $ssid == "" || $ssid == "$ssid_active" ]]; then
+if [[ $ssid == "" ]]; then
+    exit
+fi
+
+notify() {
+    command -v notify-send >/dev/null && notify-send "Wi-Fi" "$1"
+}
+
+# Selecting the network you're already on offers Disconnect / Forget. The
+# active profile's name can differ from the SSID, so act on the profile.
+if [[ $ssid == "$ssid_active" ]]; then
+    active=$(nmcli -g NAME,TYPE connection show --active | awk -F: '$2 == "802-11-wireless" { print $1; exit }')
+    date +%s%3N > "$stamp"
+    action=$(printf 'Disconnect\nForget\n' | pikr -d -p "$ssid")
+    case $action in
+    Disconnect)
+        if out=$(nmcli connection down "$active" 2>&1); then
+            notify "Disconnected from $ssid"
+        else
+            notify "Could not disconnect from $ssid: ${out#Error: }"
+        fi
+        ;;
+    Forget)
+        if out=$(nmcli connection delete "$active" 2>&1); then
+            notify "Forgot $ssid"
+        else
+            notify "Could not forget $ssid: ${out#Error: }"
+        fi
+        ;;
+    esac
     exit
 fi
 
@@ -80,10 +111,6 @@ fi
 # column is empty, so parsing it made every network look open and secured
 # ones failed silently with "Secrets were required".
 security=$(grep -w -F "$ssid" <<<"$scan" | head -n 1 | cut -d : -f4 | xargs)
-
-notify() {
-    command -v notify-send >/dev/null && notify-send "Wi-Fi" "$1"
-}
 
 # Exact-name match on wifi profiles (names may contain spaces).
 connection=$(nmcli -g NAME,TYPE connection show | awk -F: -v s="$ssid" '$1 == s && $2 == "802-11-wireless" { print $1; exit }')
