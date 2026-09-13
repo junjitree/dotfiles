@@ -86,13 +86,14 @@ list=$(
 
 list=$(echo "$list" | sort -k1 -nr | cut -d : -f2- | column -t -s :)
 
-# Shift+Delete forgets the highlighted network, where pikr supports
-# --kb-custom (exit 10). Stock pikr lacks it, so detect instead of assuming.
+# Right on a highlighted network opens a "Forget?" card; Enter forgets it
+# (pikr exits 10). Needs a pikr with --kb-custom KEY=PROMPT; stock pikr lacks
+# it, so detect instead of assuming.
 forget_key=()
 prompt="Wi-Fi"
-if pikr --help 2>/dev/null | grep -q -- '--kb-custom'; then
-    forget_key=(--kb-custom Shift+Delete)
-    prompt="Wi-Fi  (⇧Del forget)"
+if pikr --help 2>/dev/null | grep -qF 'KEY[=PROMPT]'; then
+    forget_key=(--kb-custom 'Right=Forget?')
+    prompt="Wi-Fi  (→ forget)"
 fi
 
 # Record when the picker opens (for the double-click guard above), then
@@ -108,27 +109,15 @@ notify() {
 }
 
 if [[ $picked == 10 && -n $ssid ]]; then
+    # pikr's card already asked "Forget?", so act immediately.
     profile=$(nmcli -g NAME,TYPE connection show | awk -F: -v s="$ssid" '$1 == s && $2 == "802-11-wireless" { print $1; exit }')
     if [[ -z $profile ]]; then
         notify "$ssid isn't a saved network"
-        exit
+    elif out=$(nmcli connection delete "$profile" 2>&1); then
+        notify "Forgot $ssid"
+    else
+        notify "Could not forget $ssid: ${out#Error: }"
     fi
-    date +%s%3N > "$stamp"
-    # Rows name the network: pikr ranks dmenu rows by frecency, so bare
-    # "Forget"/"Cancel" would float whichever was picked most to the top and
-    # a reflexive Enter could delete. Unique rows keep Keep first.
-    confirm=$(printf 'Keep %s\nForget %s\n' "$ssid" "$ssid" | pikr -d -p "Forget $ssid?")
-    if [[ $confirm == "Forget $ssid" ]]; then
-        if out=$(nmcli connection delete "$profile" 2>&1); then
-            notify "Forgot $ssid"
-        else
-            notify "Could not forget $ssid: ${out#Error: }"
-        fi
-    fi
-    exit
-fi
-
-if [[ $ssid == "" ]]; then
     exit
 fi
 
@@ -198,8 +187,12 @@ nmcli connection add type wifi con-name "$ssid" ssid "$ssid" wifi-sec.key-mgmt w
 if out=$(nmcli connection up "$ssid" 2>&1); then
     notify "Connected to $ssid"
 else
-    # Drop the failed profile so the next attempt asks for the password again
-    # instead of silently reusing a wrong one.
-    nmcli connection delete "$ssid" >/dev/null 2>&1
+    # A rejected password surfaces as missing secrets: drop the profile so the
+    # next attempt asks again instead of reusing a wrong password. Any other
+    # failure (DHCP timeout, AP out of range) keeps it — the password was
+    # accepted, and deleting would make you retype a correct one.
+    if grep -qi 'secrets' <<<"$out"; then
+        nmcli connection delete "$ssid" >/dev/null 2>&1
+    fi
     notify "Could not connect to $ssid: ${out#Error: }"
 fi
