@@ -1,0 +1,2 @@
+statusbar = "truncate"
+model = "deepseek://deepseek-v4-flash"
