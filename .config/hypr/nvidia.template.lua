@@ -1,0 +1,11 @@
+-- Per-machine GPU environment. Seeded once by krypt, then hand-edited.
+-- Required unconditionally from hyprland.lua, so this file must exist on every
+-- machine — leave it as-is on non-NVIDIA boxes.
+--
+-- On an NVIDIA box, uncomment:
+--
+-- hl.env("LIBVA_DRIVER_NAME", "nvidia")
+-- hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+-- hl.env("GBM_BACKEND", "nvidia-drm")
+-- hl.env("NVD_BACKEND", "direct")
+-- hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
