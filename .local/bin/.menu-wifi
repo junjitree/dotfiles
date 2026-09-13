@@ -22,25 +22,43 @@ fi
 
 lock=
 
-# nmcli's --rescan is an option of `dev wifi list` and must follow it. With the
-# default (auto) nmcli blocks on a full hardware scan whenever the cache is
-# stale — ~7.7 s on the T14's QCNFA765. NetworkManager keeps the cache warm
-# with its own background scans, so reading it is instant and populated in
-# practice. The async rescan keeps the next open fresh.
-nmcli device wifi rescan >/dev/null 2>&1
-scan=$(nmcli -g ssid,signal,bars,security dev wifi list --rescan no)
+# nmcli's --rescan is an option of `dev wifi list` and must follow it.
+#
+# Reading NetworkManager's cache is instant, but once associated NM scans
+# rarely and lets other access points expire — the cache can hold just the
+# network you're on. So trust it only if the last scan is recent (nmcli's
+# own --rescan auto uses the same 30 s cutoff). Otherwise show a modal and
+# wait for a real scan: ~2.5 s on junji-pc, ~7.7 s on the T14's QCNFA765.
+read_scan() {
+    nmcli -g ssid,signal,bars,security dev wifi list --rescan no
+}
+wifi_dev=$(nmcli -g DEVICE,TYPE dev | awk -F: '$2 == "wifi" { print $1; exit }')
+dbus_path=$(nmcli -g GENERAL.DBUS-PATH device show "$wifi_dev" 2>/dev/null)
+last_scan() {
+    busctl get-property org.freedesktop.NetworkManager "$dbus_path" \
+        org.freedesktop.NetworkManager.Device.Wireless LastScan 2>/dev/null | awk '{ print $2 }'
+}
 
-# Empty cache (first open after boot, wifi just enabled): show a modal so the
-# wait is visible, and poll until the scan requested above lands.
-if [[ -z "${scan//[[:space:]]/}" ]]; then
+before=$(last_scan)
+now=$(awk '{ printf "%d", $1 * 1000 }' /proc/uptime)
+fresh=false
+[[ ${before:--1} -ge 0 ]] && ((now - before <= 30000)) && fresh=true
+
+# Always request a rescan so the next open is current. NM refuses scans in
+# quick succession; only wait on one it actually accepted.
+rescan_ok=false
+nmcli device wifi rescan >/dev/null 2>&1 && rescan_ok=true
+
+scan=$(read_scan)
+if $rescan_ok && { ! $fresh || [[ -z "${scan//[[:space:]]/}" ]]; }; then
     pikr -e "Wi-Fi: scanning…" &
     modal=$!
-    for _ in $(seq 1 40); do
-        sleep 0.25
-        scan=$(nmcli -g ssid,signal,bars,security dev wifi list --rescan no)
-        [[ -n "${scan//[[:space:]]/}" ]] && break
+    for _ in $(seq 1 60); do
+        sleep 0.2
+        [[ $(last_scan) != "$before" ]] && break
     done
     kill "$modal" 2>/dev/null
+    scan=$(read_scan)
 fi
 
 ssids=$(cut -d : -f1 <<<"$scan" | sort | uniq)
@@ -67,20 +85,48 @@ list=$(
 
 list=$(echo "$list" | sort -k1 -nr | cut -d : -f2- | column -t -s :)
 
+# Shift+Delete forgets the highlighted network, where pikr supports
+# --kb-custom (exit 10). Stock pikr lacks it, so detect instead of assuming.
+forget_key=()
+prompt="Wi-Fi"
+if pikr --help 2>/dev/null | grep -q -- '--kb-custom'; then
+    forget_key=(--kb-custom Shift+Delete)
+    prompt="Wi-Fi  (⇧Del forget)"
+fi
+
 # Record when the picker opens (for the double-click guard above), then
 # release the lock so a later press can toggle it closed.
 date +%s%3N > "$stamp"
 flock -u 9
-wifi=$(echo "$list" | pikr -d -p Wi-Fi)
+wifi=$(echo "$list" | pikr -d -p "$prompt" "${forget_key[@]}")
+picked=$?
 ssid=$(echo "$wifi" | cut -d '"' -f2)
-
-if [[ $ssid == "" ]]; then
-    exit
-fi
 
 notify() {
     command -v notify-send >/dev/null && notify-send "Wi-Fi" "$1"
 }
+
+if [[ $picked == 10 && -n $ssid ]]; then
+    profile=$(nmcli -g NAME,TYPE connection show | awk -F: -v s="$ssid" '$1 == s && $2 == "802-11-wireless" { print $1; exit }')
+    if [[ -z $profile ]]; then
+        notify "$ssid isn't a saved network"
+        exit
+    fi
+    date +%s%3N > "$stamp"
+    confirm=$(printf 'Forget\nCancel\n' | pikr -d -p "Forget $ssid?")
+    if [[ $confirm == Forget ]]; then
+        if out=$(nmcli connection delete "$profile" 2>&1); then
+            notify "Forgot $ssid"
+        else
+            notify "Could not forget $ssid: ${out#Error: }"
+        fi
+    fi
+    exit
+fi
+
+if [[ $ssid == "" ]]; then
+    exit
+fi
 
 # Selecting the network you're already on offers Disconnect / Forget. The
 # active profile's name can differ from the SSID, so act on the profile.
