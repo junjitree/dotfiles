@@ -97,6 +97,13 @@ point.
 
 ## Open questions
 
+- **Waybar workspace clicks do nothing under the Lua config.** Waybar 0.15.0
+  sends `dispatch workspace N`, which Hyprland 0.56's Lua config manager rejects
+  (`hyprctl dispatch 'hl.dsp.focus({ workspace = "N" })'` works). Waybar master
+  has the fix (`bfd0cfe`, "detect dispatch protocol via configProvider",
+  July 2026) but it isn't in a release. Decided 2026-09-14 to wait for 0.16.0
+  rather than run `waybar-git`; keybinds are unaffected. Affects junji-pc and
+  the office box.
 - **Menu stacking**: audio, bluetooth and top menus open a new instance per
   click. `.menu-wifi` solves this with a flock lock plus debounce; a
   focus-or-launch wrapper would cover the others.
