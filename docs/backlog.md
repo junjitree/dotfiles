@@ -11,8 +11,10 @@ The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc and passes
   `monitors.lua`/`workspaces.lua` if the laptop needs them; leave `nvidia.lua`
   commented (no NVIDIA). Log out and back in: `hyprctl reload` does not switch
   from `hyprland.conf` to `hyprland.lua`, only a fresh start does.
-- **Office box** (harryfocker, user julius): still on the pre-krypt layout,
-  unmigrated.
+- **Office box** (harryfocker, user julius): migrated 2026-09-14 like junji-pc.
+  Its pre-migration state is in `~/backups/files-pre-krypt-2026-09-14.tar.gz`,
+  and `~/.cache/pikr-fork` (1.4 GB with build output) holds the checkout the
+  fork pikr was installed from.
 - **Legacy `.conf` leftovers on junji-pc**: `hyprland.conf`, `apps.conf`,
   `input.conf`, `monitors.conf`, `nvidia.conf`, `workspaces.conf` in
   `~/.config/hypr` are kept as a rollback (Hyprland falls back to them if
