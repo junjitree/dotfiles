@@ -28,7 +28,10 @@ The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc and passes
   branch, installed to `~/.cargo/bin/pikr` (shadows AUR `pikr-bin`;
   `cargo uninstall pikr` reverts). `.menu-wifi` feature-detects both flags from
   `pikr --help`, so it degrades on stock pikr.
-- **PRs to kryptic-sh/pikr wait for Junji's go-ahead** after his own testing.
+- **Open PRs**: kryptic-sh/pikr#45 (`--kb-custom`, `--loading`) and #46
+  (password empty-state), and mxaddict/dotfiles#10 (`.menu-wifi`, from the
+  `feat/menu-wifi` branch off `mxaddict/main`). #45's first commit message
+  claims its e2e tests ran; they didn't (no sway here), which the PR says.
 - e2e tests skip locally: they need `sway` (headless) and `wtype`, and sway is
   not installed.
 
