@@ -32,6 +32,54 @@ The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc and passes
 - e2e tests skip locally: they need `sway` (headless) and `wtype`, and sway is
   not installed.
 
+## `.menu-wifi` — open after the 3-round review (2026-09-14)
+
+The review loop hit its round budget with the last round still finding real
+issues, so it is INCOMPLETE; the findings below were verified but not fixed.
+Evidence is from NetworkManager 1.58.1 sources, pikr's source and a stub harness
+(fake `nmcli`/`pikr`/`busctl` on `PATH`); nothing was run against a live access
+point.
+
+- **Password on nmcli's argv** (`connection add … wifi-sec.psk`,
+  `connection modify … wifi-sec.psk`): readable from `/proc/PID/cmdline` by
+  other local users while nmcli runs (`/proc` has no `hidepid`). The supported
+  alternative is `nmcli connection up uuid U passwd-file F` with
+  `802-11-wireless-security.psk:PW` in a 0600 file; NM source says it saves
+  agent-supplied system-owned secrets, but that the password persists is
+  unverified without a real connection attempt.
+- **pikr trims typed text**, so passwords with leading or trailing spaces can't
+  be entered (`Payload::Stdout(query_text.trim())` in `ui/view.rs`). Fix belongs
+  in the pikr fork: don't trim in `-P` mode.
+- **OWE-TM joins as open**, not with `key-mgmt owe`, which NM also accepts for
+  transition-mode access points; whether the supplicant completes the transition
+  is unverified.
+- **Saved profiles that aren't PSK/SAE** (e.g. an old open profile for a network
+  now secured) report the failure every time; the old script deleted and
+  re-prompted. Forgetting with Right fixes it by hand.
+- **`psk-flags` 1 or 2 profiles**: `connection modify wifi-sec.psk` likely won't
+  persist, so the re-prompt fails the same way. Unverified; junji-pc's profiles
+  have `psk-flags` 0, the T14 was not checked.
+- **Stale list when a rescan is refused or rate-limited**: `wait_for_scan` caps
+  the wait, but when NM 1.58 refuses or silently drops a request was not
+  measured.
+- **No "Connecting…" feedback** while `connection up` runs (up to nmcli's
+  timeout); clicks during it are silently ignored by the lock.
+- **Picking a network that is still activating** counts as "already on it"
+  (`GENERAL.CON-UUID` is set during activation) and does nothing.
+- **Double-click to close** reopens the menu: the first click closes the picker,
+  the second starts a new run. Pre-existing.
+- **"secrets" in a profile name or SSID** can misclassify an unrelated
+  activation error as a password failure. Rare.
+- **Access points whose AKM NM 1.58.1 doesn't map** (`sae-ext-key`, some FT/FILS
+  suites) show as open or WEP in `dev wifi list`; joining fails with NM's error.
+  Upstream NetworkManager issue.
+- **Broken pikr** (missing, no Wayland display, crash) and an unwritable runtime
+  dir fail silently, indistinguishable from a cancel.
+- **Stock pikr has no way to forget** a network: the forget key needs the fork's
+  `--kb-custom`, and the Disconnect/Forget submenu was removed.
+- **Not reviewed**: the pikr fork's own changes, and the behaviour on the T14
+  (wifi only, slower scan) beyond timing figures from earlier sessions.
+
 ## krypt quirks
 
 - `krypt deps` exits 0 without installing anything; install packages by hand.
