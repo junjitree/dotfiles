@@ -1,16 +1,20 @@
 # Backlog
 
-## Hyprland Lua migration — remaining machines
+## Hyprland Lua migration — per-machine leftovers
 
-The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc and passes
-`Hyprland --verify-config` on the office box's 0.55.4. Still to do:
+The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc, the office box
+and junji-t14. What each machine still carries from the migration:
 
-- **junji-t14**: `krypt update`, then
-  `krypt setup --yes --prompts hypr_apps,hypr_input` — `krypt link` seeds
-  `apps.lua`/`input.lua` with their `{{placeholders}}` unfilled. Hand-write
-  `monitors.lua`/`workspaces.lua` if the laptop needs them; leave `nvidia.lua`
-  commented (no NVIDIA). Log out and back in: `hyprctl reload` does not switch
-  from `hyprland.conf` to `hyprland.lua`, only a fresh start does.
+- **junji-t14**: reinstalled 2026-09-13 (new tailnet node `100.64.0.11`, new SSH
+  host keys), migrated 2026-09-15 like junji-pc: `krypt update`,
+  `krypt setup --yes --prompts hypr_apps,hypr_input`, template monitor rule, tpm
+  and plugins on junji-pc's commits, fork pikr `aa25687` built in
+  `~/.cache/pikr-fork` (the `local` branch is not on GitHub; it was sent as a
+  git bundle). Pre-migration state is in
+  `~/backups/t14-pre-lua-2026-09-15.tar.gz`; the legacy `~/.config/hypr/*.conf`
+  files remain as a rollback. The stale caveman skills and `RTK.md` files were
+  deleted and pruned from its krypt manifest (backup
+  `manifest.json.bak-2026-09-15-pre-prune`).
 - **Office box** (harryfocker, user julius): migrated 2026-09-14 like junji-pc.
   Its pre-migration state is in `~/backups/files-pre-krypt-2026-09-14.tar.gz`,
   and `~/.cache/pikr-fork` (1.4 GB with build output) holds the checkout the
@@ -22,6 +26,18 @@ The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc and passes
   while; also drop the stale `hyprland.conf` and `chromium-flags.conf` link
   entries from `~/.local/state/krypt/manifest.json` (the latter is a template
   now).
+
+## hyprpolkitagent fails after a logout
+
+The systemd user manager outlives a Hyprland logout. When the compositor exits,
+`hyprpolkitagent.service` restarts itself several times before the next session
+exists ("Failed to create wl_display"), hits the start limit, and the new
+session's `systemctl --user start hyprpolkitagent` (the `hyprland.start` hook in
+`hyprland.lua`) is then refused as "Start request repeated too quickly". Seen on
+junji-t14 on 2026-09-15; fixed by hand with
+`systemctl --user reset-failed hyprpolkitagent` and a start. A likely fix is to
+run that `reset-failed` in the start hook before the start; not done or tested
+yet.
 
 ## pikr fork (junjitree/pikr)
 
@@ -204,8 +220,8 @@ re-proposed.
 
 ### Not verified
 
-- Not run on junji-t14 (still on the legacy `.conf` config, which has no
-  `SUPER + /` bind and no descriptions) or the office box, nor on macOS.
+- Verified on junji-t14 after its migration (Lua config, 87 described binds,
+  same rows as junji-pc, via a stub pikr); not run on the office box or macOS.
 - A physical `SUPER + /` press and the toggle-close press were not tested; the
   script was run from a shell, including one real pikr launch.
 - Whether Hyprland's `mouse = true` drag binds and `SUPER + F` fullscreen
