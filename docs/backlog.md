@@ -108,3 +108,105 @@ point.
   click. `.menu-wifi` solves this with a flock lock plus debounce; a
   focus-or-launch wrapper would cover the others.
 - **GPG key DDC87D28** is not on GitHub, so signed commits show Unverified.
+
+## README keybinding cheatsheet drifts from `hyprland.lua`
+
+`krypt menu keys` (`SUPER + /`, `.local/bin/.menu-keys`) reads the key combos
+from `hyprctl binds` and `tmux.conf` each time it opens, so a changed or added
+bind shows up there without editing a list (a new plugin bind still needs a
+`plugin-notes.sh` entry for its description). The hand-written "Keybinding
+cheatsheet (Hyprland)" tables in `README.md` are a hand-kept copy that can
+drift, and already have (checked against `hyprland.lua` on 2026-09-15):
+
+- `$mod + shift + n` is listed as swaync "dismiss". It runs `swaync-client -d`,
+  which is `--toggle-dnd`.
+- Missing: `$mod + alt + n` (`-C`, close all notifications), `$mod + shift + g`
+  (`krypt system start`), `$mod + shift + tab` (cycle back), `XF86PowerOff`
+  (power menu).
+- `$mod + r` says "qalculate picker"; `krypt menu calc` is pikr's calc mode.
+
+Decision needed: fix the tables, or cut them down to a pointer at `$mod + /`.
+The README is also the upstream mxaddict/dotfiles README, and a table is still
+readable to someone who hasn't installed anything yet.
+
+## Keybinding cheatsheet (`krypt menu keys`) — open after the 4-round review (2026-09-15)
+
+What it is: `SUPER + /` runs `.local/bin/.menu-keys`, which lists the Hyprland
+binds (`hyprctl binds`, descriptions from `description` in `hyprland.lua`) and
+the tmux binds `tmux.conf` and its plugins add (a throwaway tmux server loads
+`tmux.conf`; plugin descriptions come from `.config/tmux/plugin-notes.sh`).
+
+### Considered and declined (user's call, 2026-09-15)
+
+All three were raised after the review and declined; kept here so they aren't
+re-proposed.
+
+- **Other shortcut layers are not in it.** The round-4 sweep found these
+  user-configured sources, ranked by how likely they are to be forgotten:
+  1. kanata (`/etc/kanata.kbd`): home-row holds (A/; CTRL, S/L ALT, D/K SHIFT,
+     F/J SUPER), hold T symbols, hold G numbers, hold V
+     arrows/Home/End/PgUp/PgDn, Caps→Esc, bottom-row Alt/Super swap. kanata has
+     no command that lists binds, so it means parsing
+     `defalias`/`defsrc`/`deflayer`.
+  2. fish: fzf.fish binds set in `config.fish` (Ctrl+F/G/S/P/V) and fzf's
+     (Ctrl+R/T, Alt+C). Readable live with `fish -ic 'bind --user'`.
+  3. alacritty `[[keyboard.bindings]]` (Shift+Return sends Alt+Return).
+  4. waybar `on-click`/`on-scroll` actions; opencode leader (`ctrl+o`); tmux
+     mouse (`set -g mouse on`); fish command aliases (notably `gg`/`gl`, which
+     `git add .`, commit and push); MangoHud toggles (only where installed).
+- **Power key powers off junji-pc.** Live `HandlePowerKey` is `poweroff`
+  (`busctl get-property org.freedesktop.login1 ... HandlePowerKey`); the repo's
+  `.root/etc/systemd/logind.conf` (`HandlePowerKey=ignore`) is not deployed to
+  `/etc`. Hyprland also binds `XF86PowerOff` to the power menu, so a press
+  likely opens the menu and shuts down. Not pressed to confirm. Deploying the
+  `/etc` file would fix it.
+- **Modifier names vs physical keys.** With kanata on, the bottom-row key in the
+  Windows position sends Alt and the Alt position sends Super (`defsrc`
+  `lctl lmet lalt` vs `base` `lctl lalt lmet`). README "`$mod` = Super (Windows
+  key)" and every `SUPER + …` row read wrong physically until kanata is part of
+  the cheatsheet or the README says so.
+
+### Behaviour that surprised us (not bugs in the cheatsheet)
+
+- Hyprland `CTRL + arrows` (window resize) takes Ctrl+arrow word-jump from every
+  app, including fish vi insert and browser text fields.
+- fzf.fish's Ctrl+V/Ctrl+S replace fish's clipboard paste and pager search.
+- tmux root binds hide fish binds in non-vim panes: Alt+h (man page), Alt+l,
+  Ctrl+h/j/k/l, Ctrl+\\.
+- `SUPER + F` can't use left home-row Super (F is that hold key); use J.
+- tmux 3.7c: `list-keys -T table key` prints nothing and exits 0; a config with
+  a syntax error is skipped silently under `-f` but reported by `source-file`;
+  `bind -N note -T table key` with no command keeps the command; a bare `;` key
+  must be passed as `\;`; a server stuck in a `run` ignores `kill-server` and
+  SIGTERM.
+- tmux-sensible binds `R`, `C-n`, `C-p` and the prefix letter only when free, so
+  `plugin-notes.sh` marks those entries `optional=1`.
+
+### Deferred (LOW, not triggered by the current config)
+
+- `.menu-keys`: tmux `prefix2` and `-r` (repeat) are not shown; key names like
+  `BTab`, `NPage`, `DC`, mouse keys are raw; Hyprland `release`/`longPress`/
+  `locked`/`catch_all` and keycode-only binds are not marked (a keycode bind
+  would render with an empty key); a tab in a tmux note splits its row; a
+  `[`/`*`/`?` in the `tmux.conf` path is globbed by `source-file`; the hung
+  `run` job's own child process is left running after the timeout kill.
+- `.menu-keys` failures that only reach stderr (nothing visible from the bind):
+  `XDG_RUNTIME_DIR` unset, `flock` missing or the lock file unwritable.
+- `pkill pikr` in `.menu-keys` closes any open pikr (launcher, autofill), same
+  as the other `.menu-*` scripts — declined, kept consistent with siblings.
+- vim-tmux-navigator with `@tmux_navigator_disable_when_zoomed 1` breaks its own
+  copy-mode-vi C-k/C-l/C-\\ binds (unquoted `$tmux_cmd`); `plugin-notes.sh` then
+  reports them missing. Upstream plugin bug.
+- Pre-existing, outside this change: `tmux.conf` comments "Start windows and
+  panes at 1, not 0" (sets 0) and "Shift Alt vim keys" (no Shift); `tmux.conf`'s
+  own copy-mode-vi `y` is overridden by tmux-yank; `.krypt/commands.toml`
+  `autofill` description doesn't mention the four modes or that each submits.
+
+### Not verified
+
+- Not run on junji-t14 (still on the legacy `.conf` config, which has no
+  `SUPER + /` bind and no descriptions) or the office box, nor on macOS.
+- A physical `SUPER + /` press and the toggle-close press were not tested; the
+  script was run from a shell, including one real pikr launch.
+- Whether Hyprland's `mouse = true` drag binds and `SUPER + F` fullscreen
+  toggles behave as their descriptions say (pre-existing binds).
