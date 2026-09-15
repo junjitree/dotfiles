@@ -216,6 +216,10 @@ src = ".local/bin/.menu-emoji-update"
 dst = "${LOCAL_BIN}/.menu-emoji-update"
 
 [[link]]
+src = ".local/bin/.menu-keys"
+dst = "${LOCAL_BIN}/.menu-keys"
+
+[[link]]
 src = ".local/bin/.menu-mail"
 dst = "${LOCAL_BIN}/.menu-mail"
 
