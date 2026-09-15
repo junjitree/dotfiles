@@ -27,18 +27,6 @@ and junji-t14. What each machine still carries from the migration:
   entries from `~/.local/state/krypt/manifest.json` (the latter is a template
   now).
 
-## hyprpolkitagent fails after a logout
-
-The systemd user manager outlives a Hyprland logout. When the compositor exits,
-`hyprpolkitagent.service` restarts itself several times before the next session
-exists ("Failed to create wl_display"), hits the start limit, and the new
-session's `systemctl --user start hyprpolkitagent` (the `hyprland.start` hook in
-`hyprland.lua`) is then refused as "Start request repeated too quickly". Seen on
-junji-t14 on 2026-09-15; fixed by hand with
-`systemctl --user reset-failed hyprpolkitagent` and a start. A likely fix is to
-run that `reset-failed` in the start hook before the start; not done or tested
-yet.
-
 ## pikr fork (junjitree/pikr)
 
 - `--kb-custom`, the confirm card and `--loading` live on `feat/kb-custom`; the
