@@ -37,6 +37,10 @@ src_glob = ".config/bat/**/*"
 dst = "${XDG_CONFIG}/bat/"
 
 [[link]]
+src_glob = ".config/bluetui/**/*"
+dst = "${XDG_CONFIG}/bluetui/"
+
+[[link]]
 src_glob = ".config/cargo/**/*"
 dst = "${XDG_CONFIG}/cargo/"
 
@@ -130,6 +134,10 @@ dst = "${XDG_CONFIG}/tmux/"
 [[link]]
 src_glob = ".config/waybar/**/*"
 dst = "${XDG_CONFIG}/waybar/"
+
+[[link]]
+src_glob = ".config/wiremix/**/*"
+dst = "${XDG_CONFIG}/wiremix/"
 
 [[link]]
 src_glob = ".config/xsettingsd/**/*"
