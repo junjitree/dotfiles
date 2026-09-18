@@ -116,6 +116,10 @@ src_glob = ".config/nwg-look/**/*"
 dst = "${XDG_CONFIG}/nwg-look/"
 
 [[link]]
+src_glob = ".config/pipewire/**/*"
+dst = "${XDG_CONFIG}/pipewire/"
+
+[[link]]
 src_glob = ".config/rofi/**/*"
 dst = "${XDG_CONFIG}/rofi/"
 
