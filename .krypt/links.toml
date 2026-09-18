@@ -207,13 +207,18 @@ dst = "${LOCAL_BIN}/.firmup"
 src = ".local/bin/.kanata"
 dst = "${LOCAL_BIN}/.kanata"
 
-# .menu-apps / .menu-audio / .menu-bluetooth / .menu-top wrappers
-# removed — krypt's `commands.toml` invokes the underlying tools
-# (pikr, wiremix, bluetui, btop) directly.
+# .menu-apps / .menu-audio / .menu-top wrappers removed — krypt's
+# `commands.toml` invokes the underlying tools (pikr, wiremix, btop)
+# directly.
 
 [[link]]
 src = ".local/bin/.menu-autofill"
 dst = "${LOCAL_BIN}/.menu-autofill"
+
+[[link]]
+src = ".local/bin/.menu-bluetooth"
+dst = "${LOCAL_BIN}/.menu-bluetooth"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-calc"
