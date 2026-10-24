@@ -99,6 +99,23 @@ point.
 - `.root/` is not deployed. Its mkinitcpio files are from the old encrypted t14
   install and should not be applied to the current unencrypted one.
 
+## Waybar LTE pill (`custom/lte`, `.local/bin/.home-internet`)
+
+- **Not seen in a real outage.** Added 2026-10-25 and tested only against a
+  throwaway HA entity (`sensor.waybar_lte_test`): pill on `LTE`, hidden
+  otherwise, hidden with retries while HA is unreachable. The real
+  `sensor.home_internet` was not faked because HA's Converge outage automation
+  acts on it.
+- **Runs only where `~/.config/homeassistant/token` exists and
+  `python-websockets` is installed**; elsewhere the exec just sleeps. Waybar
+  0.15.0 ignores `exec-if` for a module without an `interval` (tested: the pill
+  still showed), so the check lives in `exec`. Not checked whether the office
+  box or junji-t14 have that token; if one does, it shows the pill too.
+- `python-websockets` was installed by hand on junji-pc and is not in
+  `.krypt/deps.toml`, so it stays off the other machines.
+- Waybar runs the module once per bar, so a two-monitor machine keeps two HA
+  websocket connections.
+
 ## Open questions
 
 - **Waybar workspace clicks do nothing under the Lua config.** Waybar 0.15.0

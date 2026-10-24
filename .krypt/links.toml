@@ -208,6 +208,10 @@ src = ".local/bin/.kanata"
 dst = "${LOCAL_BIN}/.kanata"
 
 [[link]]
+src = ".local/bin/.home-internet"
+dst = "${LOCAL_BIN}/.home-internet"
+
+[[link]]
 src = ".local/bin/.kanata-layer"
 dst = "${LOCAL_BIN}/.kanata-layer"
 

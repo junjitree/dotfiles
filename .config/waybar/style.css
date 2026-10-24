@@ -21,6 +21,7 @@ tooltip {
 #bluetooth,
 #clock,
 #cpu,
+#custom-lte,
 #custom-notification,
 #custom-power,
 #disk,
@@ -65,6 +66,11 @@ tooltip {
 
 #custom-notification {
   margin-right: 10px;
+}
+
+#custom-lte {
+  color: #fc4c02;
+  border-color: #fc4c02;
 }
 
 #pulseaudio {

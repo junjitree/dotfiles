@@ -11,6 +11,7 @@
         "battery",
         "power-profiles-daemon",
         "network",
+        "custom/lte",
         "bluetooth",
     ],
     "modules-center": ["hyprland/workspaces"],
@@ -79,6 +80,17 @@
             "warning": 30,
             "critical": 10,
         },
+    },
+
+    // Only while the house is on the LTE backup (HA's sensor.home_internet,
+    // pushed). Machines without the HA token or python-websockets just sleep
+    // and show nothing; the check is in exec because waybar ignores exec-if
+    // for a module without an interval.
+    "custom/lte": {
+        "return-type": "json",
+        "exec": "test -r \"$HOME/.config/homeassistant/token\" && python3 -c 'import websockets' 2>/dev/null && exec python3 \"$HOME/.local/bin/.home-internet\" || exec sleep infinity",
+        "restart-interval": 60,
+        "escape": true,
     },
 
     "network": {
