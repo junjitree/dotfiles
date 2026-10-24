@@ -163,6 +163,8 @@ local mod = "SUPER"
 -- krypt shortcuts
 hl.bind(mod .. " + SHIFT + G", hl.dsp.exec_cmd("krypt system start"), { description = "Launch daily apps (krypt system start)" })
 hl.bind("CTRL + SHIFT + K", hl.dsp.exec_cmd("krypt kanata toggle"), { description = "Toggle kanata keyboard remapper" })
+hl.bind("CTRL + SHIFT + 1", hl.dsp.exec_cmd("krypt kanata base"), { description = "Kanata: usual layout" })
+hl.bind("CTRL + SHIFT + 2", hl.dsp.exec_cmd("krypt kanata game"), { description = "Kanata: game mode" })
 
 -- Notification center
 hl.bind(mod .. " + N", hl.dsp.exec_cmd(apps.notify .. " -t -sw"), { description = "Toggle notification center" })

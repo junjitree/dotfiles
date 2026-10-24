@@ -207,6 +207,10 @@ dst = "${LOCAL_BIN}/.firmup"
 src = ".local/bin/.kanata"
 dst = "${LOCAL_BIN}/.kanata"
 
+[[link]]
+src = ".local/bin/.kanata-layer"
+dst = "${LOCAL_BIN}/.kanata-layer"
+
 # .menu-apps / .menu-audio / .menu-top wrappers removed — krypt's
 # `commands.toml` invokes the underlying tools (pikr, wiremix, btop)
 # directly.

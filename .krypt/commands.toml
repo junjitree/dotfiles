@@ -155,6 +155,24 @@ steps = [
     { run = ["bash", "${HOME}/.local/bin/.kanata"], ignore_failure = true },
 ]
 
+[[command]]
+group       = "kanata"
+name        = "base"
+description = "Switch kanata to the usual layout, starting it if off"
+platform    = "linux"
+steps = [
+    { run = ["python3", "${HOME}/.local/bin/.kanata-layer", "base"], ignore_failure = true },
+]
+
+[[command]]
+group       = "kanata"
+name        = "game"
+description = "Switch kanata to game mode (held Ctrl/Alt repeat, no home-row mods)"
+platform    = "linux"
+steps = [
+    { run = ["python3", "${HOME}/.local/bin/.kanata-layer", "game"], ignore_failure = true },
+]
+
 # ---------------------------------------------------------------------------
 # env group
 # ---------------------------------------------------------------------------

@@ -30,6 +30,16 @@
     t (tap-hold $tap-time $hold-time t (layer-while-held symb))
     g (tap-hold $tap-time $hold-time g (layer-while-held numb))
     v (tap-hold $tap-time $hold-time v (layer-while-held vnav))
+
+    ;; Game mode: no home-row mods except @j (hold for Super), and held
+    ;; Ctrl/Alt re-tap like Windows key repeat. Linux never repeats
+    ;; modifiers, so MapleStory's held attack/jump fire once. Switched by
+    ;; `krypt kanata base|game` over TCP.
+    ;; The re-tapped Ctrl is never held, so Hyprland can't see the chord back;
+    ;; @g1 sends Ctrl+Shift+1 whole when the physical Ctrl and Shift are down.
+    gctl (macro-repeat lctl 30)
+    g1 (switch ((and (input real lctl) (input real lsft))) C-S-1 break () 1 break)
+    galt (macro-repeat lalt 30)
 )
 
 (deflayer base
@@ -62,4 +72,12 @@
     _    _    _    _    _    _          S-5  S-6  S-7  S-8  ]    `
     _    _    _    _    _    _          S-9  S-0  S--  S-=  \    _
     _    _    _                   _                    _    _    _
+)
+
+(deflayer game
+    esc  @g1  2    3    4    5          6    7    8    9    0    -    +    bspc
+    tab  q    w    e    r    t          y    u    i    o    p    [    ]    \
+    caps a    s    d    f    g          h    @j   k    l    ;    '
+    lsft z    x    c    v    b          n    m    ,    .    /    rsft
+    @gctl lmet @galt              spc                  ralt rmet rctl
 )
