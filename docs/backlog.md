@@ -50,16 +50,10 @@ notification daemon, tmxr in place of tmux, SUPER+W/A/U opening lyr's panels,
 the kryptic and agent-CLI hooks, paru config, fnm `--use-on-cd`, alacritty's
 `common.toml` split, Windows/macOS support and CI. Kept ours or left out:
 
-- **`.config/agents/AGENTS.md` (needs a decision).** Kept ours unchanged: it is
-  the user's global agent rules, so upstream's edits wait for a yes. Upstream
-  adds: an attribution rule that also forbids `Claude-Session` trailers and
-  overrides harness reminders, with a pre-push grep; "push each finished slice
-  as soon as it is green" (conflicts with "commit or push only when asked"); a
-  Dotfiles section pointing at mxaddict/dotfiles; scaffolding deps via the
-  package manager; a `docs/plan/` convention; per-repo sub-agent caps (1
-  reader + 1 writer per repo, vs our 2 + 1); a perf-measurement quiet window.
-  Upstream's version has no rule against quote-tool commit messages; ours does,
-  so taking it wholesale would drop that.
+- `.config/agents/AGENTS.md`: taken from upstream 2026-11-04, plus our
+  no-quote-commit rule and a Dotfiles section naming this fork and the live
+  `~/.config/krypt/repo` checkout. Upstream's Rust note about a `cargo` wrapper
+  that indents `error:` lines does not apply on junji-pc (plain `cargo`).
 - `.codex/config.toml`: upstream's is mxaddict's model, trusted paths and a
   Blender MCP server. Kept ours.
 - `quoty` cargo hook: random-quote commit messages, which AGENTS.md forbids.
@@ -158,9 +152,6 @@ point.
 
 ## Open questions
 
-- **lyr workspace clicks under the Lua config: unverified.** Waybar 0.15.0's
-  clicks did nothing (it sends `dispatch workspace N`, which Hyprland 0.56's Lua
-  config rejects); check lyr's.
 - **Menu stacking**: audio, bluetooth and top menus open a new instance per
   click. `.menu-wifi` solves this with a flock lock plus debounce; a
   focus-or-launch wrapper would cover the others.
