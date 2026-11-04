@@ -29,17 +29,52 @@ and junji-t14. What each machine still carries from the migration:
 
 ## pikr fork (junjitree/pikr)
 
-- `--kb-custom`, the confirm card and `--loading` live on `feat/kb-custom`; the
-  empty-password fix on `fix/password-empty-state`. Both merged into the `local`
-  branch, installed to `~/.cargo/bin/pikr` (shadows AUR `pikr-bin`;
-  `cargo uninstall pikr` reverts). `.menu-wifi` feature-detects both flags from
-  `pikr --help`, so it degrades on stock pikr.
-- **Open PRs**: kryptic-sh/pikr#45 (`--kb-custom`, `--loading`) and #46
-  (password empty-state), and mxaddict/dotfiles#10 (`.menu-wifi`, from the
-  `feat/menu-wifi` branch off `mxaddict/main`). #45's first commit message
-  claims its e2e tests ran; they didn't (no sway here), which the PR says.
+- junji-pc runs stock AUR `pikr-bin` 0.9.8 since 2026-11-04 (the fork's `local`
+  build was `cargo uninstall`ed); it has `--kb-custom` and `--loading`, which
+  `.menu-wifi` feature-detects. junji-t14 and the office box still have the fork
+  build in `~/.cargo/bin`; uninstall it there too.
+- **GPU wake test pending (needs junji-t14, the hybrid Intel + MX550 laptop).**
+  kryptic-sh/pikr#50 is closed; on 2026-11-04 mxaddict asked on it whether the
+  GPU enumeration issue still happens on latest main or the last release. Open a
+  pikr menu after the dGPU has runtime-suspended and read
+  `/sys/class/drm/card*/device/power/runtime_status` before and after, as in
+  #50's table. If it stays suspended, reply on #50 and close mxaddict/floem#1
+  (still open) and the junjitree/floem fork.
 - e2e tests skip locally: they need `sway` (headless) and `wtype`, and sway is
   not installed.
+
+## Upstream sync 2026-11-04 — what was left out
+
+Merged mxaddict/main (`chore/sync-upstream-2026-11`). Taken: lyr as bar and
+notification daemon, tmxr in place of tmux, SUPER+W/A/U opening lyr's panels,
+the kryptic and agent-CLI hooks, paru config, fnm `--use-on-cd`, alacritty's
+`common.toml` split, Windows/macOS support and CI. Kept ours or left out:
+
+- **`.config/agents/AGENTS.md` (needs a decision).** Kept ours unchanged: it is
+  the user's global agent rules, so upstream's edits wait for a yes. Upstream
+  adds: an attribution rule that also forbids `Claude-Session` trailers and
+  overrides harness reminders, with a pre-push grep; "push each finished slice
+  as soon as it is green" (conflicts with "commit or push only when asked"); a
+  Dotfiles section pointing at mxaddict/dotfiles; scaffolding deps via the
+  package manager; a `docs/plan/` convention; per-repo sub-agent caps (1
+  reader + 1 writer per repo, vs our 2 + 1); a perf-measurement quiet window.
+  Upstream's version has no rule against quote-tool commit messages; ours does,
+  so taking it wholesale would drop that.
+- `.codex/config.toml`: upstream's is mxaddict's model, trusted paths and a
+  Blender MCP server. Kept ours.
+- `quoty` cargo hook: random-quote commit messages, which AGENTS.md forbids.
+- `.claude-work/settings.json` stays its own file (no pinned model, no voice
+  keys); upstream deploys `.claude/settings.json` to both profiles.
+- `krypt menu wifi` / `audio` / `bluetooth` keep running `.menu-wifi`, wiremix
+  and `.menu-bluetooth`; upstream points them at lyr's panels. The keys go to
+  lyr's panels in both.
+- `.config/chromium-flags.conf` stays a `[[template]]`, not upstream's link.
+- `waybar.service` and the waybar config stay deployed as a fallback; nothing
+  starts them now.
+- Other machines (junji-t14, office box) still need `krypt update`; its
+  `kryptic-deps` hook installs lyr-bin and tmxr-bin.
+- The junjitree/krypt and junjitree/infr forks have no commits of our own; they
+  are only behind upstream.
 
 ## `.menu-wifi` — open after the 3-round review (2026-09-14)
 
@@ -91,7 +126,10 @@ point.
 
 ## krypt quirks
 
-- `krypt deps` exits 0 without installing anything; install packages by hand.
+- `krypt deps` exited 0 without installing anything on krypt 0.4.2. Not
+  re-checked on 0.6.0, where the `kryptic-deps` hook depends on it: its dry run
+  names pacman as the manager for AUR `-bin` packages, so whether it reaches
+  them through paru is unverified.
 - `krypt link` never overwrites a conflicting file; never use `--force` or
   `adopt-edits` here — both would clobber machine-local files or commit
   `gh/hosts.yml` tokens into this public repo.
@@ -99,32 +137,30 @@ point.
 - `.root/` is not deployed. Its mkinitcpio files are from the old encrypted t14
   install and should not be applied to the current unencrypted one.
 
-## Waybar LTE pill (`custom/lte`, `.local/bin/.home-internet`)
+## LTE indicator (`custom/lte` in `.config/lyr/config.toml`, `.local/bin/.home-internet`)
 
-- **Not seen in a real outage.** Added 2026-10-25 and tested only against a
-  throwaway HA entity (`sensor.waybar_lte_test`): pill on `LTE`, hidden
-  otherwise, hidden with retries while HA is unreachable. The real
+- **Moved from waybar to lyr 2026-11-04** (lyr 0.6.0 added waybar-style custom
+  modules). The config passes lyr's own loader (`lyr_config::load`), which also
+  rejected a zone naming a missing `[custom.*]` table. **Not yet seen running in
+  lyr**: check it shows `LTE` in orange on a test entity.
+- **Not seen in a real outage.** Tested 2026-10-25 under waybar against a
+  throwaway HA entity (`sensor.waybar_lte_test`). The real
   `sensor.home_internet` was not faked because HA's Converge outage automation
   acts on it.
 - **Runs only where `~/.config/homeassistant/token` exists and
-  `python-websockets` is installed**; elsewhere the exec just sleeps. Waybar
-  0.15.0 ignores `exec-if` for a module without an `interval` (tested: the pill
-  still showed), so the check lives in `exec`. Not checked whether the office
-  box or junji-t14 have that token; if one does, it shows the pill too.
+  `python-websockets` is installed**; elsewhere the exec just sleeps. The check
+  lives in `exec` because waybar 0.15.0 ignored `exec-if` without an `interval`;
+  lyr has `exec_if`, untested here.
 - `python-websockets` was installed by hand on junji-pc and is not in
   `.krypt/deps.toml`, so it stays off the other machines.
-- Waybar runs the module once per bar, so a two-monitor machine keeps two HA
+- lyr runs the module once per bar, so a two-monitor machine keeps two HA
   websocket connections.
 
 ## Open questions
 
-- **Waybar workspace clicks do nothing under the Lua config.** Waybar 0.15.0
-  sends `dispatch workspace N`, which Hyprland 0.56's Lua config manager rejects
-  (`hyprctl dispatch 'hl.dsp.focus({ workspace = "N" })'` works). Waybar master
-  has the fix (`bfd0cfe`, "detect dispatch protocol via configProvider",
-  July 2026) but it isn't in a release. Decided 2026-09-14 to wait for 0.16.0
-  rather than run `waybar-git`; keybinds are unaffected. Affects junji-pc and
-  the office box.
+- **lyr workspace clicks under the Lua config: unverified.** Waybar 0.15.0's
+  clicks did nothing (it sends `dispatch workspace N`, which Hyprland 0.56's Lua
+  config rejects); check lyr's.
 - **Menu stacking**: audio, bluetooth and top menus open a new instance per
   click. `.menu-wifi` solves this with a flock lock plus debounce; a
   focus-or-launch wrapper would cover the others.

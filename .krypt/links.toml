@@ -1,5 +1,10 @@
 # Links — deploy files / dirs from the repo into $HOME
 # Included by .krypt.toml
+#
+# Tools that read ~/.config on every OS share one entry. Tools that read a
+# native folder on Windows get a second `platform = "windows"` entry with the
+# same source; Windows-only files live under AppData/ and Documents/, mirroring
+# where they land.
 
 # --- Root dotfiles ---
 [[link]]
@@ -9,6 +14,7 @@ dst = "${HOME}/.gitconfig"
 [[link]]
 src = ".gtkrc-2.0"
 dst = "${HOME}/.gtkrc-2.0"
+platform = "linux"
 
 [[link]]
 src = ".clang-format"
@@ -27,14 +33,47 @@ src = ".prettierignore"
 dst = "${HOME}/.prettierignore"
 
 # --- .config subdirs (glob per subdir) ---
+#
+# Entries gated to ["linux", "macos"] have a native-folder counterpart on
+# Windows (or no Windows use at all), so the ~/.config copy is not deployed
+# where nothing reads it.
+
+# Alacritty: one shared config and an entry point per platform that imports it
+# and sets the shell (fish on Linux and macOS, PowerShell 7 on Windows).
+[[link]]
+src = ".config/alacritty/common.toml"
+dst = "${XDG_CONFIG}/alacritty/common.toml"
 
 [[link]]
-src_glob = ".config/alacritty/**/*"
-dst = "${XDG_CONFIG}/alacritty/"
+src = ".config/alacritty/alacritty.toml"
+dst = "${XDG_CONFIG}/alacritty/alacritty.toml"
+platform = "linux"
+
+[[link]]
+src = ".config/alacritty/macos.toml"
+dst = "${XDG_CONFIG}/alacritty/alacritty.toml"
+platform = "macos"
+
+# Alacritty on Windows ignores ~/.config.
+[[link]]
+src = "AppData/Roaming/alacritty/alacritty.toml"
+dst = "${WIN_APPDATA}/alacritty/alacritty.toml"
+platform = "windows"
 
 [[link]]
 src_glob = ".config/bat/**/*"
 dst = "${XDG_CONFIG}/bat/"
+platform = ["linux", "macos"]
+
+[[link]]
+src_glob = ".config/bat/**/*"
+dst = "${WIN_APPDATA}/bat/"
+platform = "windows"
+
+[[link]]
+src_glob = ".config/bluetui/**/*"
+dst = "${XDG_CONFIG}/bluetui/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/bluetui/**/*"
@@ -47,22 +86,32 @@ dst = "${XDG_CONFIG}/cargo/"
 [[link]]
 src_glob = ".config/dconf/**/*"
 dst = "${XDG_CONFIG}/dconf/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/fish/**/*"
 dst = "${XDG_CONFIG}/fish/"
+platform = ["linux", "macos"]
 
 [[link]]
 src_glob = ".config/gh/**/*"
 dst = "${XDG_CONFIG}/gh/"
+platform = ["linux", "macos"]
+
+[[link]]
+src_glob = ".config/gh/**/*"
+dst = "${WIN_APPDATA}/GitHub CLI/"
+platform = "windows"
 
 [[link]]
 src_glob = ".config/gtk-3.0/**/*"
 dst = "${XDG_CONFIG}/gtk-3.0/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/gtk-4.0/**/*"
 dst = "${XDG_CONFIG}/gtk-4.0/"
+platform = "linux"
 
 # Hyprland: only versioned files; the live *.lua (apps.lua, input.lua,
 # monitors.lua, workspaces.lua) are gitignored and managed via [[template]]
@@ -70,22 +119,27 @@ dst = "${XDG_CONFIG}/gtk-4.0/"
 [[link]]
 src = ".config/hypr/hyprland.lua"
 dst = "${XDG_CONFIG}/hypr/hyprland.lua"
+platform = "linux"
 
 [[link]]
 src = ".config/hypr/hypridle.conf"
 dst = "${XDG_CONFIG}/hypr/hypridle.conf"
+platform = "linux"
 
 [[link]]
 src = ".config/hypr/hyprlock.conf"
 dst = "${XDG_CONFIG}/hypr/hyprlock.conf"
+platform = "linux"
 
 [[link]]
 src = ".config/hypr/hyprqt6engine.conf"
 dst = "${XDG_CONFIG}/hypr/hyprqt6engine.conf"
+platform = "linux"
 
 [[link]]
 src = ".config/hypr/exfil.png"
 dst = "${XDG_CONFIG}/hypr/exfil.png"
+platform = "linux"
 
 [[link]]
 src = ".config/hypr/suisei.png"
@@ -94,26 +148,51 @@ dst = "${XDG_CONFIG}/hypr/suisei.png"
 [[link]]
 src_glob = ".config/lazygit/**/*"
 dst = "${XDG_CONFIG}/lazygit/"
+platform = "linux"
+
+# lazygit on macOS reads ~/Library/Application Support unless XDG_CONFIG_HOME
+# is set.
+[[link]]
+src_glob = ".config/lazygit/**/*"
+dst = "${MAC_LIBRARY}/Application Support/lazygit/"
+platform = "macos"
+
+[[link]]
+src_glob = ".config/lazygit/**/*"
+dst = "${WIN_LOCALAPPDATA}/lazygit/"
+platform = "windows"
 
 [[link]]
 src_glob = ".config/MangoHud/**/*"
 dst = "${XDG_CONFIG}/MangoHud/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/mpv/**/*"
 dst = "${XDG_CONFIG}/mpv/"
-
-[[link]]
-src_glob = ".config/nushell/**/*"
-dst = "${XDG_CONFIG}/nushell/"
+platform = ["linux", "macos"]
 
 [[link]]
 src_glob = ".config/nvim/**/*"
 dst = "${XDG_CONFIG}/nvim/"
+platform = ["linux", "macos"]
+
+[[link]]
+src_glob = ".config/nvim/**/*"
+dst = "${WIN_LOCALAPPDATA}/nvim/"
+platform = "windows"
 
 [[link]]
 src_glob = ".config/nwg-look/**/*"
 dst = "${XDG_CONFIG}/nwg-look/"
+platform = "linux"
+
+# paru reads ~/.config/paru/paru.conf on top of /etc/paru.conf, which it owns
+# as a package file; keeping our options here leaves that copy alone.
+[[link]]
+src_glob = ".config/paru/**/*"
+dst = "${XDG_CONFIG}/paru/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/pipewire/**/*"
@@ -122,22 +201,35 @@ dst = "${XDG_CONFIG}/pipewire/"
 [[link]]
 src_glob = ".config/rofi/**/*"
 dst = "${XDG_CONFIG}/rofi/"
-
-[[link]]
-src_glob = ".config/swaync/**/*"
-dst = "${XDG_CONFIG}/swaync/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/tealdeer/**/*"
 dst = "${XDG_CONFIG}/tealdeer/"
+platform = ["linux", "macos"]
+
+# tealdeer on Windows nests its config one level deeper, under config/.
 
 [[link]]
-src_glob = ".config/tmux/**/*"
-dst = "${XDG_CONFIG}/tmux/"
+src_glob = ".config/tealdeer/**/*"
+dst = "${WIN_APPDATA}/tealdeer/config/"
+platform = "windows"
+
+# lyr reads only the differences from its built-in defaults.
+[[link]]
+src_glob = ".config/lyr/**/*"
+dst = "${XDG_CONFIG}/lyr/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/waybar/**/*"
 dst = "${XDG_CONFIG}/waybar/"
+platform = "linux"
+
+[[link]]
+src_glob = ".config/wiremix/**/*"
+dst = "${XDG_CONFIG}/wiremix/"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/wiremix/**/*"
@@ -146,6 +238,7 @@ dst = "${XDG_CONFIG}/wiremix/"
 [[link]]
 src_glob = ".config/xsettingsd/**/*"
 dst = "${XDG_CONFIG}/xsettingsd/"
+platform = "linux"
 
 # User systemd units. waybar.service overrides the packaged unit, whose
 # Requisite=graphical-session.target Hyprland never activates; hyprland.lua
@@ -158,6 +251,7 @@ platform = "linux"
 [[link]]
 src = ".config/mimeapps.list"
 dst = "${XDG_CONFIG}/mimeapps.list"
+platform = "linux"
 
 [[link]]
 src = ".config/starship.toml"
@@ -166,14 +260,68 @@ dst = "${XDG_CONFIG}/starship.toml"
 [[link]]
 src = ".config/user-dirs.dirs"
 dst = "${XDG_CONFIG}/user-dirs.dirs"
+platform = "linux"
 
 [[link]]
 src = ".config/user-dirs.locale"
 dst = "${XDG_CONFIG}/user-dirs.locale"
+platform = "linux"
 
 [[link]]
 src_glob = ".config/opencode/**/*"
 dst = "${XDG_CONFIG}/opencode/"
+
+# --- LLM agents ---
+#
+# One source per file, deployed to every agent that reads it; the repo holds no
+# symlinks, which Git for Windows checks out as text files holding the target
+# path. ~/.claude-work is a second Claude Code config dir (CLAUDE_CONFIG_DIR in
+# the fish and PowerShell configs) sharing the same rules and settings.
+[[link]]
+src = ".config/agents/AGENTS.md"
+dst = "${XDG_CONFIG}/opencode/AGENTS.md"
+
+[[link]]
+src = ".config/agents/AGENTS.md"
+dst = "${HOME}/.claude/CLAUDE.md"
+
+[[link]]
+src = ".config/agents/AGENTS.md"
+dst = "${HOME}/.claude-work/CLAUDE.md"
+
+[[link]]
+src = ".config/agents/AGENTS.md"
+dst = "${HOME}/.codex/AGENTS.md"
+
+# settings.json runs the statusline as `bash ~/.claude/statusline-command.sh`
+# from both config dirs, so one copy serves both; on Windows `bash` is Git
+# Bash's, and the script needs jq (the core group).
+[[link]]
+src = ".claude/settings.json"
+dst = "${HOME}/.claude/settings.json"
+
+[[link]]
+src = ".claude-work/settings.json"
+dst = "${HOME}/.claude-work/settings.json"
+
+[[link]]
+src = ".claude/statusline-command.sh"
+dst = "${HOME}/.claude/statusline-command.sh"
+
+# --- Windows Terminal ---
+# Only settings.json: the state.json beside it is runtime state Terminal writes
+# itself (generated profiles, a hash of the settings).
+[[link]]
+src = "AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
+dst = "${WIN_LOCALAPPDATA}/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
+platform = "windows"
+
+# --- PowerShell ---
+
+[[link]]
+src = "Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
+dst = "${DOCUMENTS}/PowerShell/Microsoft.PowerShell_profile.ps1"
+platform = "windows"
 
 # --- .local/bin utility + menu scripts ---
 # Battery scripts (.batrep/.batlog/.batclear) absorbed into the native
@@ -182,30 +330,47 @@ dst = "${XDG_CONFIG}/opencode/"
 [[link]]
 src = ".local/bin/.browser"
 dst = "${LOCAL_BIN}/.browser"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.clear"
 dst = "${LOCAL_BIN}/.clear"
+platform = ["linux", "macos"]
 
 [[link]]
 src = ".local/bin/.clearkeys"
 dst = "${LOCAL_BIN}/.clearkeys"
+platform = ["linux", "macos"]
 
 [[link]]
 src = ".local/bin/.envdown"
 dst = "${LOCAL_BIN}/.envdown"
+platform = ["linux", "macos"]
+
+[[link]]
+src = ".local/bin/.envdown.ps1"
+dst = "${LOCAL_BIN}/.envdown.ps1"
+platform = "windows"
 
 [[link]]
 src = ".local/bin/.envup"
 dst = "${LOCAL_BIN}/.envup"
+platform = ["linux", "macos"]
+
+[[link]]
+src = ".local/bin/.envup.ps1"
+dst = "${LOCAL_BIN}/.envup.ps1"
+platform = "windows"
 
 [[link]]
 src = ".local/bin/.firmup"
 dst = "${LOCAL_BIN}/.firmup"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.kanata"
 dst = "${LOCAL_BIN}/.kanata"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.home-internet"
@@ -222,6 +387,7 @@ dst = "${LOCAL_BIN}/.kanata-layer"
 [[link]]
 src = ".local/bin/.menu-autofill"
 dst = "${LOCAL_BIN}/.menu-autofill"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-bluetooth"
@@ -231,14 +397,22 @@ platform = "linux"
 [[link]]
 src = ".local/bin/.menu-calc"
 dst = "${LOCAL_BIN}/.menu-calc"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-emoji"
 dst = "${LOCAL_BIN}/.menu-emoji"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-emoji-update"
 dst = "${LOCAL_BIN}/.menu-emoji-update"
+platform = "linux"
+
+[[link]]
+src = ".local/bin/.menu-keys"
+dst = "${LOCAL_BIN}/.menu-keys"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-keys"
@@ -247,80 +421,81 @@ dst = "${LOCAL_BIN}/.menu-keys"
 [[link]]
 src = ".local/bin/.menu-mail"
 dst = "${LOCAL_BIN}/.menu-mail"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-pass"
 dst = "${LOCAL_BIN}/.menu-pass"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-power"
 dst = "${LOCAL_BIN}/.menu-power"
-
-[[link]]
-src = ".local/bin/.menu-time"
-dst = "${LOCAL_BIN}/.menu-time"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.menu-wifi"
 dst = "${LOCAL_BIN}/.menu-wifi"
+platform = "linux"
+
+[[link]]
+src = ".local/bin/.menu-time"
+dst = "${LOCAL_BIN}/.menu-time"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.mirror"
 dst = "${LOCAL_BIN}/.mirror"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.nproc"
 dst = "${LOCAL_BIN}/.nproc"
+platform = ["linux", "macos"]
 
 [[link]]
 src = ".local/bin/.pull-all-models"
 dst = "${LOCAL_BIN}/.pull-all-models"
+platform = ["linux", "macos"]
+
+[[link]]
+src = ".local/bin/.pull-all-models.ps1"
+dst = "${LOCAL_BIN}/.pull-all-models.ps1"
+platform = "windows"
 
 [[link]]
 src = ".local/bin/.start"
 dst = "${LOCAL_BIN}/.start"
+platform = "linux"
 
 [[link]]
 src = ".local/bin/.swap"
 dst = "${LOCAL_BIN}/.swap"
+platform = "linux"
 
 [[link]]
-src = ".local/bin/.swaync-test"
-dst = "${LOCAL_BIN}/.swaync-test"
+src = ".local/bin/.notify-test"
+dst = "${LOCAL_BIN}/.notify-test"
+platform = "linux"
 
 
 [[link]]
 src = ".local/bin/grimblast"
 dst = "${LOCAL_BIN}/grimblast"
-
-[[link]]
-src = ".local/bin/t"
-dst = "${LOCAL_BIN}/t"
+platform = "linux"
 
 # --- .local/share ---
 [[link]]
 src = ".local/share/emojis"
 dst = "${HOME}/.local/share/emojis"
+platform = "linux"
 
 [[link]]
 src_glob = ".local/share/applications/**/*"
 dst = "${HOME}/.local/share/applications/"
+platform = "linux"
 
-# --- LLM agent configs ---
-# Shared agent rules. `.claude/CLAUDE.md` and the `.claude-work/*` entries are
-# symlinks into here inside the repo; krypt resolves them and writes real files.
-[[link]]
-src_glob = ".config/agents/**/*"
-dst = "${XDG_CONFIG}/agents/"
-
+# Agent skills (find-skills and its lock file).
 [[link]]
 src_glob = ".agents/**/*"
 dst = "${HOME}/.agents/"
-
-[[link]]
-src_glob = ".claude/**/*"
-dst = "${HOME}/.claude/"
-
-[[link]]
-src_glob = ".claude-work/**/*"
-dst = "${HOME}/.claude-work/"

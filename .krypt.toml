@@ -13,12 +13,15 @@ include = [
 
 [meta]
 name           = "mxaddict dotfiles"
-description    = "Arch-first dotfiles for Hyprland, Neovim, Fish, Tmux, and friends."
-krypt_min      = "0.1.0"
+description    = "Arch-first dotfiles for Hyprland, Neovim, Fish, tmxr, and friends."
+krypt_min      = "0.5.0"
 notify_backend = "auto"
 
 # ---------------------------------------------------------------------------
 # [[template]] — user-local files seeded from templates; never committed.
+# Once edited on a machine, krypt keeps them: `link` counts them as "templates
+# kept" (even with --force) and `diff` as "edited", neither as a problem.
+# Delete one to seed it again.
 # ---------------------------------------------------------------------------
 
 [[template]]
@@ -138,12 +141,29 @@ prompt  = "Keyboard layout (e.g. us, gb, de)"
 default = "us"
 
 # ---------------------------------------------------------------------------
-# [[hook]] — post-update lifecycle hooks
+# [[hook]] — post-setup and post-update lifecycle hooks
 # ---------------------------------------------------------------------------
+
+# Developer Mode (see `krypt system devmode` in .krypt/commands.toml): on a
+# fresh machine from `krypt setup`, and on machines set up before it existed
+# from `krypt update`, where a declined prompt must not stop the update.
+[[hook]]
+name = "developer-mode"
+when = "post-setup"
+if   = "platform:windows"
+run  = ["krypt", "system", "devmode"]
+
+[[hook]]
+name           = "developer-mode"
+when           = "post-update"
+if             = "platform:windows"
+run            = ["krypt", "system", "devmode"]
+ignore_failure = true
 
 [[hook]]
 name           = "ensure-user-dirs"
 when           = "post-update"
+if             = "!platform:windows"
 run            = ["bash", "-c", "mkdir -p ${HOME}/Desktop ${HOME}/Documents ${HOME}/Downloads ${HOME}/Music ${HOME}/OSs ${HOME}/Pictures/Screenshots ${HOME}/Projects ${HOME}/Public ${HOME}/Templates ${HOME}/Videos ${HOME}/.local/log"]
 ignore_failure = true
 
@@ -166,20 +186,6 @@ name           = "nvim-plugin-sync"
 when           = "post-update"
 if             = "command_exists:nvim"
 run            = ["nvim", "--headless", "+Lazy! install all", "+Lazy! update all", "+TSUpdate", "+qa"]
-ignore_failure = true
-
-[[hook]]
-name           = "tpm-install"
-when           = "post-update"
-if             = "command_exists:tmux,file_exists:${XDG_CONFIG}/tmux/plugins/tpm/bin/install_plugins"
-run            = ["bash", "-c", "${XDG_CONFIG}/tmux/plugins/tpm/bin/install_plugins"]
-ignore_failure = true
-
-[[hook]]
-name           = "tpm-update"
-when           = "post-update"
-if             = "command_exists:tmux,file_exists:${XDG_CONFIG}/tmux/plugins/tpm/bin/update_plugins"
-run            = ["bash", "-c", "${XDG_CONFIG}/tmux/plugins/tpm/bin/update_plugins all"]
 ignore_failure = true
 
 [[hook]]
@@ -221,17 +227,40 @@ if             = "command_exists:rustup"
 run            = ["rustup", "default", "stable"]
 ignore_failure = true
 
-# Install cargo tools used by the dotfiles workflow (fnm, rtk).
+# Install the kryptic-sh tools (the kryptic group in .krypt/deps.toml), so a new
+# one lands on every machine with its next `krypt setup` or `krypt update`. The
+# other groups stay a manual `krypt deps`. Declared after rustup-default-stable,
+# which the group's `cargo:` entries need; a failed install does not stop an
+# update.
+[[hook]]
+name = "kryptic-deps"
+when = "post-setup"
+run  = ["krypt", "deps", "--group", "kryptic"]
+
+[[hook]]
+name           = "kryptic-deps"
+when           = "post-update"
+run            = ["krypt", "deps", "--group", "kryptic"]
+ignore_failure = true
+
+# The claude, codex and opencode CLIs (`krypt system agents` in
+# .krypt/commands.toml), installed by their own scripts so they update
+# themselves. A failed install does not stop an update.
+[[hook]]
+name = "agent-clis"
+when = "post-setup"
+run  = ["krypt", "system", "agents"]
+
+[[hook]]
+name           = "agent-clis"
+when           = "post-update"
+run            = ["krypt", "system", "agents"]
+ignore_failure = true
+
+# Install cargo tools used by the dotfiles workflow (fnm).
 [[hook]]
 name           = "cargo-install-fnm"
 when           = "post-update"
 if             = "command_exists:cargo"
 run            = ["cargo", "install", "fnm"]
-ignore_failure = true
-
-[[hook]]
-name           = "cargo-install-rtk"
-when           = "post-update"
-if             = "command_exists:cargo"
-run            = ["cargo", "install", "--git", "https://github.com/rtk-ai/rtk"]
 ignore_failure = true

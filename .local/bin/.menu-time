@@ -8,8 +8,4 @@ timezone=$(sudo timedatectl list-timezones | pikr -d -p "Time Zone")
 if [[ $timezone != "" ]]; then
     sudo timedatectl set-timezone "$timezone"
     echo "Picked $timezone"
-
-    pkill waybar
-    waybar &
-    disown
 fi

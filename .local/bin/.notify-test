@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 # vi: ft=bash
 
-killall -9 swaync
-
-swaync &
-
-sleep 5
-
 notify-send "Normal Notification" "This is a standard notification message." &
 notify-send -u critical "Critical Alert!" "Something important requires your immediate attention." &
 notify-send -u low "Low Priority" "This is a low priority informational message that might not require immediate action." &

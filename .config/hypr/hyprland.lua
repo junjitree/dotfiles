@@ -5,9 +5,9 @@
 -- Machine-local, user-editable modules (seeded from *.template.lua by krypt,
 -- see [[template]] in .krypt.toml). Edit those files, not this one, for app
 -- defaults / input / monitors.
+local apps = require("apps")
 require("monitors")
 require("workspaces")
-local apps = require("apps")
 require("input")
 -- Per-machine GPU env (NVIDIA or empty), seeded from nvidia.template.lua.
 require("nvidia")
@@ -17,10 +17,7 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("hyprctl setcursor Breeze_Light 24")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("hyprpaper")
-  -- Through systemd: the local waybar.service drops the packaged unit's
-  -- Requisite=graphical-session.target, which Hyprland never activates.
-  hl.exec_cmd("systemctl --user start waybar")
-  hl.exec_cmd("swaync")
+  hl.exec_cmd("lyr")
   hl.exec_cmd("swayosd-server")
   -- The user manager outlives a logout: the agent restarts while no compositor
   -- exists, hits its start limit, and a plain start is then refused. One shell
@@ -101,6 +98,7 @@ hl.window_rule({ match = wine, workspace = "10 silent" })
 
 -- Force some apps/windows to be floating
 for _, cls in ipairs({
+  "^(blueman-manager)$",
   "^(nm-connection-editor)$",
   "^(nwg-displays)$",
   "^(nwg-look)$",
@@ -146,7 +144,7 @@ local workspace_rules = {
   { "3 silent", { "org.mozilla.Thunderbird" } },
   { "7 silent", { "Exodus", "Navcoin-Qt" } },
   { "8 silent", { "lutris", "steam" } },
-  { "9 silent", { "^(.*)open.spotify.com(.*)$", "obs", "spotify" } },
+  { "9 silent", { "^(.*)open.spotify.com(.*)$", "obs", "Spotify" } },
 }
 for _, entry in ipairs(workspace_rules) do
   local ws, classes = entry[1], entry[2]
@@ -161,15 +159,19 @@ end
 local mod = "SUPER"
 
 -- krypt shortcuts
-hl.bind(mod .. " + SHIFT + G", hl.dsp.exec_cmd("krypt system start"), { description = "Launch daily apps (krypt system start)" })
+hl.bind(
+  mod .. " + SHIFT + G",
+  hl.dsp.exec_cmd("krypt system start"),
+  { description = "Launch daily apps (krypt system start)" }
+)
 hl.bind("CTRL + SHIFT + K", hl.dsp.exec_cmd("krypt kanata toggle"), { description = "Toggle kanata keyboard remapper" })
 hl.bind("CTRL + SHIFT + 1", hl.dsp.exec_cmd("krypt kanata base"), { description = "Kanata: usual layout" })
 hl.bind("CTRL + SHIFT + 2", hl.dsp.exec_cmd("krypt kanata game"), { description = "Kanata: game mode" })
 
 -- Notification center
-hl.bind(mod .. " + N", hl.dsp.exec_cmd(apps.notify .. " -t -sw"), { description = "Toggle notification center" })
-hl.bind(mod .. " + SHIFT + N", hl.dsp.exec_cmd(apps.notify .. " -d -sw"), { description = "Toggle do not disturb" })
-hl.bind(mod .. " + ALT + N", hl.dsp.exec_cmd(apps.notify .. " -C -sw"), { description = "Clear all notifications" })
+hl.bind(mod .. " + N", hl.dsp.exec_cmd("lyr panel clock"), { description = "Toggle notification center" })
+hl.bind(mod .. " + SHIFT + N", hl.dsp.exec_cmd("lyr dnd"), { description = "Toggle do not disturb" })
+hl.bind(mod .. " + ALT + N", hl.dsp.exec_cmd("lyr clear"), { description = "Clear all notifications" })
 
 -- Browser
 hl.bind(mod .. " + B", hl.dsp.exec_cmd(apps.browser), { description = "Open browser" })
@@ -189,8 +191,16 @@ hl.bind(mod .. " + CTRL + P", hl.dsp.exec_cmd(apps.colorpicker), { description =
 
 -- Screenshot
 local screenshot_file = [[~/Pictures/Screenshots/`date "+%Y%m%d_%Hh%Mm%Ss"`.png]]
-hl.bind(mod .. " + P", hl.dsp.exec_cmd(apps.screenshot .. " " .. screenshot_file), { description = "Screenshot an area to clipboard and file" })
-hl.bind("Print", hl.dsp.exec_cmd(apps.screenshot .. " " .. screenshot_file), { description = "Screenshot an area to clipboard and file" })
+hl.bind(
+  mod .. " + P",
+  hl.dsp.exec_cmd(apps.screenshot .. " " .. screenshot_file),
+  { description = "Screenshot an area to clipboard and file" }
+)
+hl.bind(
+  "Print",
+  hl.dsp.exec_cmd(apps.screenshot .. " " .. screenshot_file),
+  { description = "Screenshot an area to clipboard and file" }
+)
 
 -- Screenrecord
 hl.bind(mod .. " + SHIFT + P", hl.dsp.exec_cmd(apps.record), { description = "Open screen recorder" })
@@ -202,16 +212,32 @@ hl.bind("XF86PowerOff", hl.dsp.exec_cmd("krypt menu power"), { description = "Po
 hl.bind(mod .. " + space", hl.dsp.exec_cmd("krypt menu apps"), { description = "App launcher" })
 hl.bind(mod .. " + R", hl.dsp.exec_cmd("krypt menu calc"), { description = "Calculator" })
 hl.bind(mod .. " + period", hl.dsp.exec_cmd("krypt menu emoji"), { description = "Emoji picker" })
-hl.bind(mod .. " + W", hl.dsp.exec_cmd("krypt menu wifi"), { description = "Wi-Fi menu" })
-hl.bind(mod .. " + A", hl.dsp.exec_cmd("krypt menu audio"), { description = "Audio mixer" })
-hl.bind(mod .. " + U", hl.dsp.exec_cmd("krypt menu bluetooth"), { description = "Bluetooth menu" })
+hl.bind(mod .. " + W", hl.dsp.exec_cmd("lyr panel wifi"), { description = "Wi-Fi menu" })
+hl.bind(mod .. " + A", hl.dsp.exec_cmd("lyr panel audio"), { description = "Audio menu" })
+hl.bind(mod .. " + U", hl.dsp.exec_cmd("lyr panel bluetooth"), { description = "Bluetooth menu" })
 hl.bind(mod .. " + T", hl.dsp.exec_cmd("krypt menu time"), { description = "Timezone picker" })
 hl.bind(mod .. " + escape", hl.dsp.exec_cmd("krypt menu top"), { description = "System monitor (btop)" })
 
-hl.bind(mod .. " + CTRL + J", hl.dsp.exec_cmd("krypt menu autofill -- auth"), { description = "Autofill username + password, then submit" })
-hl.bind(mod .. " + CTRL + K", hl.dsp.exec_cmd("krypt menu autofill -- user"), { description = "Autofill username, then submit" })
-hl.bind(mod .. " + CTRL + L", hl.dsp.exec_cmd("krypt menu autofill -- pass"), { description = "Autofill password, then submit" })
-hl.bind(mod .. " + CTRL + semicolon", hl.dsp.exec_cmd("krypt menu autofill -- otp"), { description = "Autofill OTP code, then submit" })
+hl.bind(
+  mod .. " + CTRL + J",
+  hl.dsp.exec_cmd("krypt menu autofill -- auth"),
+  { description = "Autofill username + password, then submit" }
+)
+hl.bind(
+  mod .. " + CTRL + K",
+  hl.dsp.exec_cmd("krypt menu autofill -- user"),
+  { description = "Autofill username, then submit" }
+)
+hl.bind(
+  mod .. " + CTRL + L",
+  hl.dsp.exec_cmd("krypt menu autofill -- pass"),
+  { description = "Autofill password, then submit" }
+)
+hl.bind(
+  mod .. " + CTRL + semicolon",
+  hl.dsp.exec_cmd("krypt menu autofill -- otp"),
+  { description = "Autofill OTP code, then submit" }
+)
 
 -- Systemcontrol binds
 -- `fullscreen 1` / `fullscreen 0` in the old hyprlang config were toggles:
@@ -223,27 +249,87 @@ hl.bind(mod .. " + S", hl.dsp.layout("togglesplit"), { description = "Toggle spl
 hl.bind(mod .. " + V", hl.dsp.window.float({ action = "toggle" }), { description = "Toggle floating window" })
 
 -- Brightness
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("swayosd-client --brightness=-10"), { description = "Brightness down" })
+hl.bind(
+  "XF86MonBrightnessDown",
+  hl.dsp.exec_cmd("swayosd-client --brightness=-10"),
+  { description = "Brightness down" }
+)
 hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("swayosd-client --brightness=+10"), { description = "Brightness up" })
 
 -- Volume control
-hl.bind(mod .. " + up", hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=+10"), { description = "Volume up" })
-hl.bind(mod .. " + down", hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=-10"), { description = "Volume down" })
-hl.bind(mod .. " + left", hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=mute-toggle"), { description = "Toggle mute" })
-hl.bind(mod .. " + right", hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=mute-toggle"), { description = "Toggle mute" })
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=+10"), { description = "Volume up" })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=-10"), { description = "Volume down" })
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=mute-toggle"), { description = "Toggle mute" })
+hl.bind(
+  mod .. " + up",
+  hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=+10"),
+  { description = "Volume up" }
+)
+hl.bind(
+  mod .. " + down",
+  hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=-10"),
+  { description = "Volume down" }
+)
+hl.bind(
+  mod .. " + left",
+  hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=mute-toggle"),
+  { description = "Toggle mute" }
+)
+hl.bind(
+  mod .. " + right",
+  hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=mute-toggle"),
+  { description = "Toggle mute" }
+)
+hl.bind(
+  "XF86AudioRaiseVolume",
+  hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=+10"),
+  { description = "Volume up" }
+)
+hl.bind(
+  "XF86AudioLowerVolume",
+  hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=-10"),
+  { description = "Volume down" }
+)
+hl.bind(
+  "XF86AudioMute",
+  hl.dsp.exec_cmd("swayosd-client --max-volume=140 --output-volume=mute-toggle"),
+  { description = "Toggle mute" }
+)
 
 -- Microphone control
 hl.bind(mod .. " + SHIFT + up", hl.dsp.exec_cmd("swayosd-client --input-volume=+10"), { description = "Mic volume up" })
-hl.bind(mod .. " + SHIFT + down", hl.dsp.exec_cmd("swayosd-client --input-volume=-10"), { description = "Mic volume down" })
-hl.bind(mod .. " + SHIFT + left", hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"), { description = "Toggle mic mute" })
-hl.bind(mod .. " + SHIFT + right", hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"), { description = "Toggle mic mute" })
-hl.bind(mod .. " + XF86AudioRaiseVolume", hl.dsp.exec_cmd("swayosd-client --input-volume=+10"), { description = "Mic volume up" })
-hl.bind(mod .. " + XF86AudioLowerVolume", hl.dsp.exec_cmd("swayosd-client --input-volume=-10"), { description = "Mic volume down" })
-hl.bind(mod .. " + XF86AudioMute", hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"), { description = "Toggle mic mute" })
-hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"), { description = "Toggle mic mute" })
+hl.bind(
+  mod .. " + SHIFT + down",
+  hl.dsp.exec_cmd("swayosd-client --input-volume=-10"),
+  { description = "Mic volume down" }
+)
+hl.bind(
+  mod .. " + SHIFT + left",
+  hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"),
+  { description = "Toggle mic mute" }
+)
+hl.bind(
+  mod .. " + SHIFT + right",
+  hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"),
+  { description = "Toggle mic mute" }
+)
+hl.bind(
+  mod .. " + XF86AudioRaiseVolume",
+  hl.dsp.exec_cmd("swayosd-client --input-volume=+10"),
+  { description = "Mic volume up" }
+)
+hl.bind(
+  mod .. " + XF86AudioLowerVolume",
+  hl.dsp.exec_cmd("swayosd-client --input-volume=-10"),
+  { description = "Mic volume down" }
+)
+hl.bind(
+  mod .. " + XF86AudioMute",
+  hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"),
+  { description = "Toggle mic mute" }
+)
+hl.bind(
+  "XF86AudioMicMute",
+  hl.dsp.exec_cmd("swayosd-client --input-volume=mute-toggle"),
+  { description = "Toggle mic mute" }
+)
 
 -- Move focus with mod + hjkl keys
 hl.bind(mod .. " + H", hl.dsp.focus({ direction = "l" }), { description = "Focus left" })
@@ -253,12 +339,24 @@ hl.bind(mod .. " + J", hl.dsp.focus({ direction = "d" }), { description = "Focus
 
 -- Window TAB for switching while in fullscreen or fakefullscreen
 hl.bind(mod .. " + tab", hl.dsp.window.cycle_next(), { description = "Cycle to next window" })
-hl.bind(mod .. " + SHIFT + tab", hl.dsp.window.cycle_next({ next = false }), { description = "Cycle to previous window" })
+hl.bind(
+  mod .. " + SHIFT + tab",
+  hl.dsp.window.cycle_next({ next = false }),
+  { description = "Cycle to previous window" }
+)
 
 -- Window size changes
 hl.bind("CTRL + right", hl.dsp.window.resize({ x = 20, y = 0, relative = true }), { description = "Grow window width" })
-hl.bind("CTRL + left", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), { description = "Shrink window width" })
-hl.bind("CTRL + up", hl.dsp.window.resize({ x = 0, y = -20, relative = true }), { description = "Shrink window height" })
+hl.bind(
+  "CTRL + left",
+  hl.dsp.window.resize({ x = -20, y = 0, relative = true }),
+  { description = "Shrink window width" }
+)
+hl.bind(
+  "CTRL + up",
+  hl.dsp.window.resize({ x = 0, y = -20, relative = true }),
+  { description = "Shrink window height" }
+)
 hl.bind("CTRL + down", hl.dsp.window.resize({ x = 0, y = 20, relative = true }), { description = "Grow window height" })
 
 -- Move window with mod + hjkl keys
@@ -272,7 +370,11 @@ hl.bind(mod .. " + SHIFT + J", hl.dsp.window.move({ direction = "d" }), { descri
 for i = 1, 10 do
   local key = i % 10 -- 10 maps to key 0
   hl.bind(mod .. " + " .. key, hl.dsp.focus({ workspace = i }), { description = "Go to workspace " .. i })
-  hl.bind(mod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }), { description = "Move window to workspace " .. i })
+  hl.bind(
+    mod .. " + SHIFT + " .. key,
+    hl.dsp.window.move({ workspace = i }),
+    { description = "Move window to workspace " .. i }
+  )
 end
 
 -- Move/resize windows with mod + LMB/RMB and dragging

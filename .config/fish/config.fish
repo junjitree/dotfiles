@@ -13,6 +13,7 @@ fish_add_path -g ~/.config/composer/vendor/bin
 fish_add_path -g ~/.dotnet/tools
 fish_add_path -g ~/.local/bin
 fish_add_path -g ~/.local/share/nvim/mason/bin
+fish_add_path -g ~/.opencode/bin
 
 # Set default editor to vim
 set -gx EDITOR hjkl
@@ -210,6 +211,17 @@ function sql
     sqeel $argv
 end
 
+# Alias for tmxr
+function t
+    tmxr $argv
+end
+function ta
+    tmxr attach $argv
+end
+function tn
+    tmxr new $argv
+end
+
 # Add navcoin alias
 function nav
     navcoin-cli $argv
@@ -335,7 +347,7 @@ end
 
 # FNM setup env
 if command -v -q fnm
-    fnm env --shell fish | source
+    fnm env --use-on-cd --shell fish | source
 end
 
 # Cap cargo at half the system threads to keep desktop responsive

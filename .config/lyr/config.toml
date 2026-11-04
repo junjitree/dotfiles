@@ -1,0 +1,18 @@
+# lyr — layered over lyr's built-in defaults (a port of the old waybar
+# config); only differences from them belong here. A list replaces the whole
+# default list, so `left` repeats the default zone with custom/lte added.
+
+[layout]
+left = ["power", "battery", "power_profile", "network", "custom/lte", "bluetooth"]
+
+# Shows while the home internet is on the B312's LTE backup (Converge down),
+# hidden otherwise. .home-internet holds a Home Assistant websocket
+# subscription and prints one JSON line per change, so nothing polls. Without
+# an HA token or python-websockets it sleeps instead, keeping the module
+# hidden rather than restarting every minute.
+[custom.lte]
+exec = """test -r "$HOME/.config/homeassistant/token" && python3 -c 'import websockets' 2>/dev/null && exec python3 "$HOME/.local/bin/.home-internet" || exec sleep infinity"""
+return_type = "json"
+restart_interval = 60
+escape = true
+colours = { lte = "#fc4c02" }

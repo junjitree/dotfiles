@@ -2,16 +2,15 @@
 # vi: ft=bash
 #
 # Keybinding cheatsheet. Hyprland rows are the running binds from
-# `hyprctl binds`. tmux rows are the binds ~/.config/tmux/tmux.conf and its
-# plugins add or change, in any key table (of the two copy-mode tables, the one
-# mode-keys selects), read by loading that file on a fresh server (so an edit
-# shows before tmux is reloaded). That load runs the config's `run` commands and
-# plugins each time the cheatsheet opens. Rows are tagged "Hyprland",
-# "tmux" or "tmux copy-mode". Descriptions are hand-written: `description` in
-# hyprland.lua, `bind -N` in tmux.conf, and ~/.config/tmux/plugin-notes.sh for
-# plugin binds; a bind without one reads "(no description)". A tmux.conf error
-# or a failed listing shows as a row of its own.
-# Picking a row does nothing; type to filter, e.g. "tmux".
+# `hyprctl binds`. tmxr rows are the binds in tmxr's prefix and root key tables
+# and in the copy-mode table mode-keys selects: tmxr's built-in defaults with
+# ~/.config/tmxr/config.toml layered over them, read on a fresh server (so an
+# edit shows before tmxr is reloaded). Rows are tagged "Hyprland", "tmxr" or
+# "tmxr copy-mode". Descriptions are hand-written: `description` in
+# hyprland.lua, where a bind without one reads "(no description)", and each
+# tmxr bind's `note`, where `list-keys -N` leaves out a bind without one. A
+# config error or a failed listing shows as a row of its own.
+# Picking a row does nothing; type to filter, e.g. "tmxr".
 
 set -o pipefail
 
@@ -46,40 +45,38 @@ hypr_binds() {
     printf '%s\n' "$rows"
 }
 
-# Prints the mode-keys line ("mode-keys vi"), then every bind in every key table,
-# on a throwaway server, so it works with no tmux running. The config is loaded
-# with source-file rather than -f: tmux skips a config with a syntax error
-# silently at startup, but reports it to a source-file client, and those
-# messages are merged into the output. Each listing gets its own socket: both
-# run at once, and a shared one would serve the first's binds. The server is
-# killed first (one left behind would still hold its old binds) and after. fd 9
-# (the lock) is closed for tmux, which could otherwise keep it, and the listing
-# gets tmux_timeout seconds, so a config that hangs can't hold the lock either.
-tmux_timeout=5
+# Prints any error from loading the config, the mode-keys line ("mode-keys
+# vi"), then each table's binds after a "table <name>" line, on a throwaway
+# server, so it works with no tmxr running. The config is loaded with
+# source-file rather than -f: tmxr skips a config with an error silently at
+# startup, but reports it to a source-file client. A failed source-file ends its
+# command chain and leaves the server on the defaults, so it gets a call of its
+# own and the listing still runs. The server is killed first (one left behind
+# would still hold its old binds) and after. fd 9 (the lock) is closed for tmxr,
+# which could otherwise keep it, and each call gets tmxr_timeout seconds, so a
+# server that hangs can't hold the lock either.
+tmxr_timeout=5
+tmxr_config=$HOME/.config/tmxr/config.toml
 
-tmux_keys() {
-    local format='#{key_prefix}	#{key_table}	#{key_string}	#{key_note}	#{key_command}'
-    local load=()
-    [[ -n ${2-} ]] && load=(source-file "$2" \;)
-    tmux -L "menu-keys-$1" kill-server 2>/dev/null
-    timeout "$tmux_timeout" tmux -L "menu-keys-$1" -f /dev/null start-server \; "${load[@]}" \
-        show-options -gw mode-keys \; list-keys -F "$format" \; kill-server 2>&1 9>&-
-    if (($? == 124)); then
-        # A server stuck in the config ignores kill-server and SIGTERM (it waits
-        # for the stuck job), and the next open on this socket would hit it.
-        pkill -KILL -f "^tmux -L menu-keys-$1 "
-        echo "tmux.conf took over ${tmux_timeout}s to load"
-    fi
+tmxr_keys() {
+    local table list=()
+    for table in prefix root copy-mode copy-mode-vi; do
+        list+=(display-message -p "table $table" \; list-keys -N -T "$table" \;)
+    done
+    tmxr -L menu-keys kill-server 2>/dev/null
+    {
+        timeout "$tmxr_timeout" tmxr -L menu-keys -f /dev/null start-server
+        [[ -f $tmxr_config ]] && timeout "$tmxr_timeout" tmxr -L menu-keys source-file "$tmxr_config"
+        timeout "$tmxr_timeout" tmxr -L menu-keys show-options -gw mode-keys \; "${list[@]}" kill-server
+    } 2>&1 9>&-
 }
 
-tmux_binds() {
-    # Drop tmux's built-in binds: rows whose table, key, note and command match
-    # an unconfigured server's. The prefix is left out of the match so a changed
-    # prefix doesn't make every built-in prefix bind look new. Anything else tmux
-    # printed (a config error, a `run` that failed) becomes a row, and a listing
-    # with no mode-keys line means that server failed. A note containing a tab
-    # would split its row, so notes must not have one.
-    awk -F '\t' -v OFS='\t' '
+tmxr_binds() {
+    # Rows come as "key  note", "prefix key  note" in the prefix table and
+    # "[table] key  note" in the copy-mode ones; key names hold no spaces.
+    # Anything printed before the first table line (a config error) becomes a
+    # row, and a listing with no mode-keys line means the server failed.
+    tmxr_keys | awk -v OFS='\t' '
         function readable(key,    mods) {
             mods = ""
             while (key ~ /^[CMS]-./) {
@@ -88,34 +85,29 @@ tmux_binds() {
             }
             return mods key
         }
-        /^mode-keys (vi|emacs)$/ {
-            if (FILENAME == ARGV[1]) defaults_read = 1
-            else { config_read = 1; copy_table = ($0 == "mode-keys vi") ? "copy-mode-vi" : "copy-mode" }
-            next
+        # Takes the first word off the row being read (note) and returns it.
+        function next_word(    word) {
+            word = note
+            sub(/ .*/, "", word)
+            sub(/^[^ ]+ +/, "", note)
+            return word
         }
-        FILENAME == ARGV[1] { if (NF == 5) builtin[$2 FS $3 FS $4 FS $5]; next }
-        NF != 5 { if ($0 != "") print "tmux", "-", $0; next }
-        { rows[++n] = $0 }
-        END {
-            if (!defaults_read || !config_read) {
-                print "tmux", "-", "Could not read binds from tmux"
-                exit
-            }
-            for (i = 1; i <= n; i++) {
-                split(rows[i], f, "\t")
-                if ((f[2] FS f[3] FS f[4] FS f[5]) in builtin) continue
-                if (f[2] ~ /^copy-mode/ && f[2] != copy_table) continue
-                if (f[2] == copy_table) { tag = "tmux copy-mode"; combo = readable(f[3]) }
-                else if (f[2] == "prefix") { tag = "tmux"; combo = readable(f[1]) ", " readable(f[3]) }
-                else if (f[2] == "root") { tag = "tmux"; combo = readable(f[3]) }
-                else { tag = "tmux"; combo = "[" f[2] "] " readable(f[3]) }
-                print tag, combo, (f[4] == "" ? "(no description)" : f[4])
-            }
+        /^mode-keys (vi|emacs)$/ { copy_table = ($0 == "mode-keys vi") ? "copy-mode-vi" : "copy-mode"; next }
+        /^table [a-z-]+$/ { table = $2; next }
+        table == "" { if ($0 != "") print "tmxr", "-", $0; next }
+        table ~ /^copy-mode/ && table != copy_table { next }
+        {
+            note = $0
+            if ($1 == "[" table "]") next_word()
+            combo = table == "prefix" ? readable(next_word()) ", " : ""
+            combo = combo readable(next_word())
+            print (table == copy_table ? "tmxr copy-mode" : "tmxr"), combo, note
         }
-    ' <(tmux_keys defaults) <(tmux_keys config "$HOME/.config/tmux/tmux.conf")
+        END { if (copy_table == "") print "tmxr", "-", "Could not read binds from tmxr" }
+    '
 }
 
-binds=$({ hypr_binds; tmux_binds; } | column -t -s $'\t' -o '    ') || {
+binds=$({ hypr_binds; tmxr_binds; } | column -t -s $'\t' -o '    ') || {
     notify-send -u critical "Keybinding cheatsheet" "Could not build the list"
     exit 1
 }

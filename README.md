@@ -16,14 +16,17 @@ genuinely shell-shaped.
 
 ## Prerequisites
 
-- **Distro**: Arch Linux (or derivative). Cross-distro deps are stubbed — expand
-  `[[deps]] apt = […]` / `dnf = […]` in `.krypt/deps.toml` to extend.
+- **OS**: Arch Linux is the primary target. `.krypt/deps.toml` also maps
+  packages for Debian/Ubuntu (apt), Fedora (dnf), macOS (Homebrew) and Windows
+  (scoop, with PowerShell 7 and uutils coreutils standing in for fish), and CI
+  resolves every package and installs the `core` group on each of them. Known
+  gaps are in `docs/backlog.md`.
 - **Display server**: Wayland (Hyprland). X11 unsupported.
 - **CPU/GPU**: x86_64, any modern Wayland-capable GPU (tested on AMD).
 - **CLI bootstrap**: `git`, `bash`, `curl`. Everything else `krypt setup`
   installs.
 
-### Runtime assets (installed via `krypt update`'s deps step)
+### Runtime assets (installed via `krypt deps`)
 
 - **Font**: [Hack Nerd Font](https://www.nerdfonts.com/) (`ttf-hack-nerd`).
 - **Cursor**: `Breeze_Light` (`breeze`).
@@ -37,10 +40,12 @@ genuinely shell-shaped.
 - **Terminal**: [Alacritty](https://alacritty.org/).
 - **Editor**: [Neovim](https://neovim.io/) +
   [LazyVim](https://www.lazyvim.org/).
-- **Bar**: [Waybar](https://github.com/Alexays/Waybar).
+- **Bar**: [lyr](https://github.com/kryptic-sh/lyr), with its own Wi-Fi,
+  Bluetooth, audio and power menus. Waybar stays installed as a fallback.
 - **Launcher**: [pikr](https://github.com/kryptic-sh/pikr) — vim-like fuzzy
   picker.
-- **Notifications**: [swaync](https://github.com/Lentera/swaync).
+- **Notifications**: lyr, which is the notification daemon and keeps the history
+  under its clock panel's calendar.
 - **File Manager**: [Nautilus](https://help.gnome.org/users/nautilus/).
 - **Browser**: [Vieb](https://github.com/Jelmerro/Vieb).
 - **Screenshot**: [Grimblast](https://github.com/hyprwm/contrib).
@@ -51,42 +56,67 @@ genuinely shell-shaped.
 
 ### 1. Install krypt
 
-| Platform | Command                                                                        |
-| -------- | ------------------------------------------------------------------------------ |
-| Arch     | `paru -S krypt-bin`                                                            |
-| macOS    | `brew install kryptic-sh/tap/krypt`                                            |
-| Any      | `cargo install krypt-cli`                                                      |
-| Manual   | grab a binary from [GH Releases](https://github.com/kryptic-sh/krypt/releases) |
+| Platform | Command                                                                                             |
+| -------- | --------------------------------------------------------------------------------------------------- |
+| Arch     | `paru -S krypt-bin`                                                                                 |
+| macOS    | `brew trust --tap kryptic-sh/tap` then `brew install kryptic-sh/tap/krypt`                          |
+| Windows  | `scoop bucket add kryptic-sh https://github.com/kryptic-sh/scoop-bucket` then `scoop install krypt` |
+| Any      | `cargo install krypt-cli`                                                                           |
+| Manual   | grab a binary from [GH Releases](https://github.com/kryptic-sh/krypt/releases)                      |
 
-Verify: `krypt --version` should report `0.2.0` or newer.
+On Windows, install [scoop](https://scoop.sh) first, in PowerShell as your own
+user (no admin): `irm get.scoop.sh | iex`. `krypt deps` installs every Windows
+package through it, per-user under `~\scoop`, so nothing asks for elevation.
+
+The `.gitconfig` sets `core.symlinks = true`, which on Windows needs Developer
+Mode so that git can create symlinks; without it, cloning or checking out a repo
+that contains one fails with `unable to create symlink ... Permission denied`.
+`krypt setup` and `krypt update` turn it on (`krypt system devmode`, one UAC
+prompt, only when it is off). Git for Windows also writes
+`core.symlinks = false` into the `.git/config` of each repo it clones where
+symlinks were not allowed, which overrides the global setting there.
+
+Verify: `krypt --version` should report `0.4.2` or newer, the `krypt_min` in
+`.krypt.toml`.
 
 ### 2. Clone + link
 
 ```sh
 krypt init https://github.com/mxaddict/dotfiles
-krypt setup    # interactive: seeds templates, prompts for identity, installs deps
-krypt link     # symlink the tree into $HOME
+krypt deps     # install this OS's packages
+krypt setup    # interactive: git identity, Hyprland defaults, keyboard layout
+krypt link     # copy this platform's files into place
 ```
 
-`krypt setup` is the wizard pass — runs the `[prompts.*]` blocks defined in
-`.krypt.toml` (git identity, hypr defaults, keyboard layout), seeds templates,
-then triggers `krypt deps` to install packages.
+`krypt setup` runs the `[prompts.*]` blocks in `.krypt.toml` and writes the
+answers to the `[[template]]` destinations; sections whose templates belong to
+another platform (the Hyprland ones outside Linux) are skipped. `krypt link`
+deploys only the entries whose `platform` matches this OS.
 
 ### 3. Daily updates
 
 ```sh
-krypt update          # pull repo, install missing deps, run post-update hooks
+krypt update          # pull repo, relink, run post-update hooks
 krypt update --dry-run         # show plan, change nothing
-krypt update --skip-hooks      # skip nvim/tmux/dconf/bat/etc. plugin syncs
+krypt update --skip-hooks      # skip nvim/fisher/dconf/bat/etc. plugin syncs
 ```
 
 Hooks declared in `.krypt.toml` (`[[hook]] when = "post-update"`) cover:
 
 - mkdir essential `$HOME` dirs + `~/.local/log`
-- fisher / nvim Lazy / tpm plugin syncs
+- fisher / nvim Lazy plugin syncs
 - bat cache rebuild, tldr cache refresh
 - dconf load from `dconf/user.ini`
 - `hyprctl reload` (gated on hyprland running)
+- Windows Developer Mode (`krypt system devmode`), which `krypt setup` also runs
+  as a `post-setup` hook
+- the kryptic-sh tools (`krypt deps --group kryptic`: hjkl, hrdr, gpur, ...),
+  also a `post-setup` hook; every other deps group is installed only by running
+  `krypt deps`
+- the claude, codex and opencode CLIs (`krypt system agents`), also a
+  `post-setup` hook: each is installed by its own script and then updates
+  itself, claude and codex in `~/.local/bin` and opencode in `~/.opencode/bin`,
+  which the fish and PowerShell configs put on `PATH`
 
 ### Forking
 
@@ -94,20 +124,65 @@ Hooks declared in `.krypt.toml` (`[[hook]] when = "post-update"`) cover:
 
 ## Migration from the old stow-bash version
 
-If you used `.files` before krypt landed (`.update` / `.setup` bash scripts):
+If you used the `~/.files` clone before krypt landed (`.update` / `.setup` bash
+scripts), `$HOME` is full of stow symlinks into that clone. Keep them and krypt
+writes through them into the clone's tracked files, which then show up there as
+uncommitted changes. Replace them with real files and retire the clone:
 
-1. `paru -S krypt-bin` (or your platform's install)
-2. `git -C ~/.files pull`
-3. `krypt update` — replaces the old `.update` chain; reloads hyprland if active
-4. Existing `~/.config/hypr/{apps,input,monitors,hyprpaper}.conf` etc. stay
-   untouched (gitignored, krypt does not overwrite seeded files)
+1. Install krypt 0.4.3 or newer (see [Install](#1-install-krypt)). Older
+   versions skip every file that already matches the repo as a conflict.
+2. Bring the clone level with the repo: commit and push anything you changed in
+   it, then `git -C ~/.files pull`. Every file you move home then matches the
+   repo, so krypt takes it over as already deployed.
+3. List every symlink into the clone, and read the list before going on:
 
-Bash scripts in `.local/bin/.*` (e.g. `.menu-power`, `.kanata`, `t`) **stay on
-disk** — krypt invokes them via `[[command]]` entries. They get full
-`shellcheck` + `ft=bash` treatment instead of being inlined into TOML strings.
+   ```bash
+   find ~ -xdev \( -path ~/.files -o -path ~/.cache \) -prune -o -type l -print |
+     while IFS= read -r link; do
+       target=$(readlink -f "$link")
+       case "$target" in "$HOME"/.files/*) printf '%s\t%s\n' "$link" "$target" ;; esac
+     done > ~/files-links.tsv
+   ```
+
+4. Swap each link for the file or directory it points at. A link whose target is
+   gone points at nothing, so it is only removed:
+
+   ```bash
+   while IFS=$'\t' read -r link target; do
+     rm "$link"
+     if [ -e "$target" ]; then mv "$target" "$link"; fi
+   done < ~/files-links.tsv
+   ```
+
+5. Check what is left in the clone that git does not have, since deleting the
+   clone loses it. The moved files show as deleted, which is expected. Move
+   anything you want to keep out of the clone first; caches and old logs can go.
+
+   ```bash
+   git -C ~/.files status --short --ignored --untracked-files=all | grep -E '^(\?\?|!!)'
+   git -C ~/.files stash list
+   git -C ~/.files log --branches --not --remotes --oneline
+   ```
+
+6. Delete the clone (`rm -rf ~/.files`) and `~/files-links.tsv`.
+7. `krypt init https://github.com/mxaddict/dotfiles` if krypt has no repo yet,
+   then `krypt update`. It replaces the old `.update` chain and reloads Hyprland
+   if it is running.
+8. `krypt diff` lists anything still out of step with the repo.
+
+Your machine's own files, the `[[template]]` destinations such as
+`~/.gitconfig.local` and `~/.config/hypr/monitors.lua`, differ from the repo on
+purpose: krypt leaves them alone and counts them in "conflicts skipped". The old
+`~/.config/hypr/{apps,input,monitors}.conf` are not read any more, since
+`hyprland.lua` loads `apps.lua`, `input.lua` and `monitors.lua` instead; move
+your settings across before deleting them.
+
+Bash scripts in `.local/bin/.*` (e.g. `.menu-power`, `.kanata`) **stay on disk**
+— krypt invokes them via `[[command]]` entries. They get full `shellcheck` +
+`ft=bash` treatment instead of being inlined into TOML strings.
 
 The Hyprland keybinds in `hyprland.lua` now invoke `krypt menu <name>` instead
-of the scripts directly. Same for waybar `on-click` handlers.
+of the scripts directly. lyr's modules open lyr's own menus.
 
 ## Templates (user-specific, gitignored)
 
@@ -140,30 +215,31 @@ Optional:
 `$mod` = **Super** (Windows key). Every menu binding invokes `krypt menu <name>`
 or another krypt subcommand — see `.krypt/commands.toml` for the underlying
 step. `$mod + /` opens a cheatsheet of these binds, read each time it opens:
-Hyprland's running binds from `hyprctl binds` (tagged `Hyprland`), and the binds
-the deployed `tmux.conf` and its plugins add, in any key table (tagged `tmux`,
-or `tmux copy-mode`). Descriptions come from each bind's `description` /
-`bind -N` note, and from `.config/tmux/plugin-notes.sh` for plugin binds.
+Hyprland's running binds from `hyprctl binds` (tagged `Hyprland`), and tmxr's
+binds in its prefix and root tables and the copy-mode table `mode-keys` selects:
+its built-in defaults, with `~/.config/tmxr/config.toml` over them when there is
+one (tagged `tmxr`, or `tmxr copy-mode`). Descriptions come from each bind's
+`description` / `note`.
 
 ### Apps & menus
 
-| Bind                  | krypt invocation       | Action                  |
-| --------------------- | ---------------------- | ----------------------- |
-| `$mod + return` / `c` | —                      | Alacritty               |
-| `$mod + b`            | —                      | Browser                 |
-| `$mod + e`            | —                      | Nautilus                |
-| `$mod + space`        | `krypt menu apps`      | App launcher            |
-| `$mod + r`            | `krypt menu calc`      | qalculate picker        |
-| `$mod + .`            | `krypt menu emoji`     | Emoji picker            |
-| `$mod + w`            | `krypt menu wifi`      | WiFi picker             |
-| `$mod + a`            | `krypt menu audio`     | wiremix                 |
-| `$mod + u`            | `krypt menu bluetooth` | Bluetooth picker        |
-| `$mod + t`            | `krypt menu time`      | Timezone picker         |
-| `$mod + escape`       | `krypt menu top`       | btop                    |
-| `$mod + shift + m`    | `krypt menu power`     | Power picker            |
-| `$mod + /`            | `krypt menu keys`      | Keybinding cheatsheet   |
-| `$mod + n` / `+S+n`   | —                      | swaync toggle / dismiss |
-| `ctrl + shift + k`    | `krypt kanata toggle`  | Toggle kanata.service   |
+| Bind                         | krypt invocation      | Action                                     |
+| ---------------------------- | --------------------- | ------------------------------------------ |
+| `$mod + return` / `c`        | —                     | Alacritty                                  |
+| `$mod + b`                   | —                     | Browser                                    |
+| `$mod + e`                   | —                     | Nautilus                                   |
+| `$mod + space`               | `krypt menu apps`     | App launcher                               |
+| `$mod + r`                   | `krypt menu calc`     | qalculate picker                           |
+| `$mod + .`                   | `krypt menu emoji`    | Emoji picker                               |
+| `$mod + w`                   | —                     | lyr Wi-Fi menu                             |
+| `$mod + a`                   | —                     | lyr audio menu                             |
+| `$mod + u`                   | —                     | lyr Bluetooth menu                         |
+| `$mod + t`                   | `krypt menu time`     | Timezone picker                            |
+| `$mod + escape`              | `krypt menu top`      | btop                                       |
+| `$mod + shift + m`           | `krypt menu power`    | Power picker                               |
+| `$mod + /`                   | `krypt menu keys`     | Keybinding cheatsheet                      |
+| `$mod + n` / `+S+n` / `+A+n` | —                     | lyr notifications / do not disturb / clear |
+| `ctrl + shift + k`           | `krypt kanata toggle` | Toggle kanata.service                      |
 
 ### Autofill (pass + wtype)
 

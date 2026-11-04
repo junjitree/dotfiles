@@ -22,7 +22,7 @@ steps = [
 [[command]]
 group       = "menu"
 name        = "keys"
-description = "Keybinding cheatsheet — Hyprland and tmux binds, shown in pikr"
+description = "Keybinding cheatsheet — Hyprland and tmxr binds, shown in pikr"
 platform    = "linux"
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.menu-keys"], ignore_failure = true },
@@ -89,6 +89,7 @@ steps = [
 group       = "menu"
 name        = "emoji-update"
 description = "Re-download emoji database from emojilib v4"
+platform    = "linux"
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.menu-emoji-update"] },
 ]
@@ -115,7 +116,7 @@ steps = [
 [[command]]
 group       = "menu"
 name        = "time"
-description = "Timezone picker — updates system timezone and restarts waybar"
+description = "Timezone picker — updates system timezone"
 platform    = "linux"
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.menu-time"], ignore_failure = true },
@@ -134,6 +135,7 @@ steps = [
 group       = "menu"
 name        = "mail"
 description = "Email account picker → opens Himalaya in Neovim"
+platform    = "linux"
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.menu-mail"], ignore_failure = true },
 ]
@@ -181,28 +183,37 @@ steps = [
 group       = "env"
 name        = "up"
 description = "Upload .env.* files for the current project to a GCS bucket"
+platform    = ["linux", "macos"]
 steps = [
     { if = "command_exists:gcloud", run = ["bash", "${HOME}/.local/bin/.envup"] },
+]
+
+# Windows variants run PowerShell ports: `bash` there is the WSL launcher.
+[[command]]
+group       = "env"
+name        = "up"
+description = "Upload .env.* files for the current project to a GCS bucket"
+platform    = "windows"
+steps = [
+    { if = "command_exists:gcloud", run = ["pwsh", "-NoProfile", "-File", "${HOME}/.local/bin/.envup.ps1"] },
 ]
 
 [[command]]
 group       = "env"
 name        = "down"
 description = "Download .env.* files for the current project from a GCS bucket"
+platform    = ["linux", "macos"]
 steps = [
     { if = "command_exists:gcloud", run = ["bash", "${HOME}/.local/bin/.envdown"] },
 ]
 
-# ---------------------------------------------------------------------------
-# tmux group
-# ---------------------------------------------------------------------------
-
 [[command]]
-group       = "tmux"
-name        = "open"
-description = "Open (or attach to) a tmux session named after the current directory"
+group       = "env"
+name        = "down"
+description = "Download .env.* files for the current project from a GCS bucket"
+platform    = "windows"
 steps = [
-    { if = "command_exists:tmux", run = ["bash", "${HOME}/.local/bin/t"] },
+    { if = "command_exists:gcloud", run = ["pwsh", "-NoProfile", "-File", "${HOME}/.local/bin/.envdown.ps1"] },
 ]
 
 # ---------------------------------------------------------------------------
@@ -241,6 +252,7 @@ steps = [
 group       = "system"
 name        = "clear"
 description = "Purge caches (bash equiv: rm ~/.cache + /var/cache; rebuild bat + tldr)"
+platform    = ["linux", "macos"]
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.clear"] },
 ]
@@ -258,6 +270,7 @@ steps = [
 group       = "system"
 name        = "clearkeys"
 description = "Delete all GitLab deploy keys across accessible projects (interactive)"
+platform    = ["linux", "macos"]
 steps = [
     # Requires interactive stdin confirm + associative arrays — kept as bash.
     { run = ["bash", "${HOME}/.local/bin/.clearkeys"] },
@@ -267,17 +280,87 @@ steps = [
 group       = "system"
 name        = "nproc"
 description = "Print CPU core count (nproc on Linux, sysctl on macOS)"
+platform    = ["linux", "macos"]
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.nproc"] },
 ]
 
 [[command]]
 group       = "system"
-name        = "swaync-test"
-description = "Restart swaync and fire a suite of test notifications"
+name        = "nproc"
+description = "Print CPU core count"
+platform    = "windows"
+steps = [
+    { run = ["pwsh", "-NoProfile", "-Command", "[Environment]::ProcessorCount"] },
+]
+
+# Developer Mode lets git create symlinks without admin rights, which the
+# .gitconfig's `core.symlinks = true` needs on Windows. Checks first, so only a
+# machine that has it off gets the one UAC prompt; fails if it is still off
+# afterwards (the prompt declined). Run by the developer-mode hooks in
+# .krypt.toml on `krypt setup` and `krypt update`.
+[[command]]
+group       = "system"
+name        = "devmode"
+description = "Turn on Windows Developer Mode (asks for elevation only if it is off)"
+platform    = "windows"
+steps = [
+    { run = ["pwsh", "-NoProfile", "-Command", '''$ErrorActionPreference = 'Stop'; $key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'; $name = 'AllowDevelopmentWithoutDevLicense'; function Test-DevMode {{ (Get-ItemProperty $key -ErrorAction Ignore).$name -eq 1 }}; if (Test-DevMode) {{ exit 0 }}; Start-Process reg -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList 'add', ($key -replace ':', ''), '/v', $name, '/t', 'REG_DWORD', '/d', '1', '/f'; if (-not (Test-DevMode)) {{ throw 'Developer Mode is still off' }}'''] },
+]
+
+# The claude, codex and opencode CLIs, each from its own install script so it
+# can update itself in userspace. A CLI already installed is left to its own
+# updater. Run by the agent-clis hooks in .krypt.toml on `krypt setup` and
+# `krypt update`.
+#
+# claude and codex land in ~/.local/bin (codex as a symlink into its release,
+# editing a shell profile only when that dir is not on PATH). opencode's
+# installer and self-update always write ~/.opencode/bin, whatever its README
+# says about OPENCODE_INSTALL_DIR and XDG_BIN_DIR, and the fish and PowerShell
+# configs put that dir on PATH; --no-modify-path keeps the installer out of the
+# krypt-managed fish config. It also skips when the opencode found on PATH is
+# already the latest, which the check after it catches.
+[[command]]
+group       = "system"
+name        = "agents"
+description = "Install the claude, codex and opencode CLIs"
+platform    = ["linux", "macos"]
+steps = [
+    { if = "!file_exists:${LOCAL_BIN}/claude", run = ["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"] },
+    { if = "!file_exists:${LOCAL_BIN}/codex", run = ["bash", "-c", "curl -fsSL https://chatgpt.com/codex/install.sh | PATH=\"$HOME/.local/bin:$PATH\" CODEX_NON_INTERACTIVE=1 sh"] },
+    { if = "!file_exists:${HOME}/.opencode/bin/opencode", run = ["bash", "-c", "curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path; test -x \"$HOME/.opencode/bin/opencode\" || {{ echo \"opencode is not in ~/.opencode/bin: its installer skips when $(command -v opencode) is already the latest; remove that one\" >&2; exit 1; }}"] },
+]
+
+# Windows: claude installs ~/.local/bin/claude.exe itself. codex's installer
+# makes its bin dir a junction to the current release, so it must keep its own
+# dir, and ~/.local/bin gets a scoop shim for it rather than a symlink: a shim
+# starts the real exe at its real path, which codex needs to find the
+# codex-resources and codex-path dirs beside its release (checked on Windows 11
+# with codex 0.158.0). opencode goes to ~/.opencode/bin as above.
+#
+# opencode's installer is a bash script; `bash` on PATH is the WSL launcher, so
+# it runs under Git's bash. opencode's self-update runs bare `bash` too, and so
+# never reaches this install, which is why the installer runs on every call
+# here: it exits early when the installed version is the latest.
+[[command]]
+group       = "system"
+name        = "agents"
+description = "Install the claude, codex and opencode CLIs"
+platform    = "windows"
+steps = [
+    { if = "!file_exists:${LOCAL_BIN}/claude.exe", run = ["pwsh", "-NoProfile", "-Command", "irm https://claude.ai/install.ps1 | iex"] },
+    { if = "!file_exists:${WIN_LOCALAPPDATA}/Programs/OpenAI/Codex/bin/codex.exe", run = ["pwsh", "-NoProfile", "-Command", "$env:CODEX_NON_INTERACTIVE = '1'; irm https://chatgpt.com/codex/install.ps1 | iex"] },
+    { run = ["pwsh", "-NoProfile", "-Command", '''$ErrorActionPreference = 'Stop'; $shim = Join-Path (scoop prefix scoop) 'supporting\shims\kiennq\shim.exe'; $bin = Join-Path $HOME '.local\bin'; $target = Join-Path $env:LOCALAPPDATA 'Programs\OpenAI\Codex\bin\codex.exe'; if (-not (Test-Path $target)) {{ throw "codex is not at $($target)" }}; $exe = Join-Path $bin 'codex.exe'; if (-not (Test-Path $exe)) {{ Copy-Item $shim $exe }}; Set-Content (Join-Path $bin 'codex.shim') "path = `"$target`""'''] },
+    { run = ["pwsh", "-NoProfile", "-Command", '''$ErrorActionPreference = 'Stop'; $bash = Join-Path (git --exec-path) '..\..\..\bin\bash.exe'; if (-not (Test-Path $bash)) {{ throw "Git's bash is not at $bash" }}; & $bash -c 'curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path'; if ($LASTEXITCODE) {{ exit $LASTEXITCODE }}; $target = Join-Path $HOME '.opencode\bin\opencode.exe'; if (-not (Test-Path $target)) {{ throw "opencode is not at $($target): its installer skips when the opencode on PATH is already the latest; remove that one" }}'''] },
+]
+
+[[command]]
+group       = "system"
+name        = "notify-test"
+description = "Fire a suite of test notifications"
 platform    = "linux"
 steps = [
-    { run = ["bash", "${HOME}/.local/bin/.swaync-test"], ignore_failure = true },
+    { run = ["bash", "${HOME}/.local/bin/.notify-test"], ignore_failure = true },
 ]
 
 # ---------------------------------------------------------------------------
@@ -288,8 +371,18 @@ steps = [
 group       = "ollama"
 name        = "pull-all"
 description = "Pull all Ollama models listed in opencode.json"
+platform    = ["linux", "macos"]
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.pull-all-models"] },
+]
+
+[[command]]
+group       = "ollama"
+name        = "pull-all"
+description = "Pull all Ollama models listed in opencode.json"
+platform    = "windows"
+steps = [
+    { run = ["pwsh", "-NoProfile", "-File", "${HOME}/.local/bin/.pull-all-models.ps1"] },
 ]
 
 # ---------------------------------------------------------------------------
@@ -300,6 +393,7 @@ steps = [
 group       = "browser"
 name        = "open"
 description = "Launch the system default browser (resolved via xdg-settings)"
+platform    = "linux"
 steps = [
     { run = ["bash", "${HOME}/.local/bin/.browser"] },
 ]

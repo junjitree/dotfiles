@@ -1,8 +1,8 @@
-# wiremix — PipeWire mixer, opened from waybar via `krypt menu audio`.
+# wiremix — PipeWire mixer.
 # Bindings defined here merge with wiremix's defaults; only the overrides
 # belong in this file.
 
-# Quit on Esc as well as `q`, so the waybar menus all close the same way. This
+# Quit on Esc as well as `q`, as bluetui does. This
 # replaces the default Esc binding (CloseDropdown); an open dropdown is still
 # dismissed by clicking outside it.
 keybindings = [

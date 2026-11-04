@@ -2,5 +2,11 @@
     "printWidth": 80,
     "proseWrap": "always",
     "singleQuote": true,
-    "trailingComma": "es5"
+    "trailingComma": "es5",
+    "overrides": [
+        {
+            "files": ".config/gh/*.yml",
+            "options": { "tabWidth": 4, "bracketSpacing": false }
+        }
+    ]
 }

@@ -16,38 +16,54 @@ group = "core"
 pacman = [
     "alacritty", "bat", "btop", "curl", "eza", "fastfetch", "fd", "fish",
     "fzf", "git", "jq", "neovim", "ripgrep", "starship", "stow", "tealdeer",
-    "tmux", "unzip", "wget", "zoxide",
+    "unzip", "wget", "zoxide",
 ]
 apt = [
     "alacritty", "bat", "btop", "curl", "eza", "fastfetch", "fd-find", "fish",
-    "fzf", "git", "jq", "neovim", "ripgrep", "stow", "tealdeer", "tmux",
+    "fzf", "git", "jq", "neovim", "ripgrep", "starship", "stow", "tealdeer",
     "unzip", "wget", "zoxide",
 ]
+# Fedora retired its tealdeer package before Fedora 45, so cargo builds it.
 dnf = [
-    "alacritty", "bat", "eza", "fastfetch", "fd-find", "fish", "fzf", "git",
-    "jq", "neovim", "ripgrep", "stow", "tealdeer", "tmux", "unzip", "zoxide",
+    "alacritty", "bat", "btop", "cargo:starship", "cargo:tealdeer", "curl",
+    "eza", "fastfetch", "fd-find", "fish", "fzf", "git", "jq", "neovim",
+    "ripgrep", "stow", "unzip", "wget", "zoxide",
 ]
+# Homebrew disabled its alacritty cask on 2026-09-01 (fails Gatekeeper); see
+# docs/backlog.md.
 brew = [
-    "alacritty", "bat", "btop", "eza", "fastfetch", "fd", "fish", "fzf",
-    "git", "jq", "neovim", "ripgrep", "starship", "stow", "tealdeer", "tmux",
-    "unzip", "wget", "zoxide",
+    "bat", "btop", "eza", "fastfetch", "fd", "fish", "fzf", "git", "jq",
+    "neovim", "ripgrep", "starship", "stow", "tealdeer", "unzip", "wget",
+    "zoxide",
+]
+# Windows uses scoop: per-user installs under ~/scoop, no UAC prompt. krypt adds
+# the buckets `bucket/app` entries name before installing a group.
+scoop = [
+    "bat", "btop", "extras/alacritty", "extras/psfzf", "eza", "fastfetch", "fd",
+    "fzf", "git", "jq", "neovim", "pwsh", "ripgrep", "starship", "tealdeer",
+    "uutils-coreutils", "zoxide",
 ]
 
+# The claude, codex and opencode CLIs are not packages here: `krypt system
+# agents` installs them with their own scripts, so they update themselves.
 [[deps]]
 group = "dev"
 pacman = [
     "bear", "doctl", "github-cli", "glab", "lazygit", "nodejs", "npm",
-    "opencode", "python-tldextract", "rustup",
+    "python-tldextract", "rustup",
 ]
 apt = [
-    "bear", "libssl-dev", "nodejs", "npm", "opencode", "pkg-config", "python3",
-    "python3-venv", "rustup",
+    "bear", "gh", "glab", "lazygit", "libssl-dev", "nodejs", "npm", "pkg-config",
+    "python3", "python3-venv", "rustup",
 ]
 dnf = [
-    "nodejs", "npm", "opencode",
+    "bear", "doctl", "gh", "glab", "nodejs", "npm", "python3", "rustup",
 ]
 brew = [
-    "bear", "doctl", "lazygit", "nodejs", "npm", "opencode", "rustup",
+    "bear", "doctl", "gh", "glab", "lazygit", "node", "rustup",
+]
+scoop = [
+    "doctl", "gh", "glab", "lazygit", "nodejs-lts", "rustup",
 ]
 
 [[deps]]
@@ -59,7 +75,9 @@ pacman = [
 ]
 apt = []
 dnf = []
-brew = []
+brew = ["font-hack-nerd-font"]
+# The Mono variant is the "Hack Nerd Font Mono" family Alacritty asks for.
+scoop = ["nerd-fonts/Hack-NF-Mono"]
 
 [[deps]]
 group = "hyprland"
@@ -68,7 +86,7 @@ pacman = [
     "brightnessctl", "dex", "grim", "hypridle", "hyprland", "hyprlock",
     "hyprpaper", "hyprpicker", "hyprpolkitagent", "hyprqt6engine",
     "libnotify", "nwg-displays", "nwg-look", "qt5-wayland",
-    "qt6-wayland", "slurp", "swaync", "swayosd", "waybar", "wl-clipboard",
+    "qt6-wayland", "slurp", "swayosd", "waybar", "wl-clipboard",
     "wtype", "xdg-desktop-portal-gtk", "xdg-desktop-portal-hyprland",
 ]
 apt = [
@@ -88,13 +106,11 @@ pacman = [
     "pipewire-jack", "pipewire-pulse", "snapshot", "sof-firmware", "wiremix",
     "wireplumber", "yt-dlp",
 ]
-apt = [
-    "mpv",
-]
-dnf = [
-    "mpv",
-]
-brew = []
+apt = ["mpv", "yt-dlp"]
+dnf = ["mpv", "yt-dlp"]
+brew = ["mpv", "yt-dlp"]
+# Windows plays media with its own player, so no mpv there.
+scoop = ["yt-dlp"]
 
 [[deps]]
 group = "system"
@@ -117,19 +133,40 @@ pacman = [
     "libadwaita", "nautilus", "papirus-icon-theme", "pass", "pass-otp",
     "pass-secret-service", "qalculate-qt", "thunderbird", "vieb-bin",
 ]
-apt = [
-    "duf",
-]
-dnf = []
-brew = []
+apt = ["duf", "dysk"]
+dnf = ["cargo:dysk", "duf", "firefox", "thunderbird"]
+brew = ["duf", "dysk", "firefox", "thunderbird"]
+scoop = ["duf", "extras/firefox", "extras/thunderbird"]
 
+# kryptic-sh tools. Arch uses the AUR -bin packages (via paru), macOS the
+# kryptic-sh Homebrew tap and Windows the kryptic-sh scoop bucket. Other systems
+# build the ones published on crates.io with cargo, which needs a default Rust
+# toolchain (the dev group's rustup). pikr, buffr, inbx, hodl and krypt publish
+# no crate or distro repository, and gemini-cli is an npm package; see
+# docs/backlog.md.
 [[deps]]
-group = "aur-tools"
-required_platforms = ["linux"]
+group = "kryptic"
 pacman = [
-    "buffr-bin", "hjkl-bin", "hodl-bin", "inbx-bin", "krypt-bin", "pikr-bin",
-    "sqeel-bin", "gemini-cli",
+    "buffr-bin", "gemini-cli", "gpur-bin", "hjkl-bin", "hodl-bin", "hrdr-bin",
+    "inbx-bin", "krypt-bin", "lyr-bin", "pikr-bin", "sqeel-bin", "tmxr-bin",
 ]
-apt = []
-dnf = []
-brew = []
+apt = [
+    "cargo:gpur", "cargo:hjkl", "cargo:hrdr", "cargo:lyr-bin", "cargo:sqeel",
+    "cargo:tmxr-cli",
+]
+dnf = [
+    "cargo:gpur", "cargo:hjkl", "cargo:hrdr", "cargo:lyr-bin", "cargo:sqeel",
+    "cargo:tmxr-cli",
+]
+brew = [
+    "gemini-cli", "kryptic-sh/tap/buffr", "kryptic-sh/tap/gpur",
+    "kryptic-sh/tap/hjkl", "kryptic-sh/tap/hodl", "kryptic-sh/tap/hrdr",
+    "kryptic-sh/tap/inbx", "kryptic-sh/tap/krypt", "kryptic-sh/tap/lyr",
+    "kryptic-sh/tap/pikr", "kryptic-sh/tap/sqeel", "kryptic-sh/tap/tmxr",
+]
+scoop = [
+    "kryptic-sh/buffr", "kryptic-sh/gpur", "kryptic-sh/hjkl", "kryptic-sh/hrdr",
+    "kryptic-sh/krypt", "kryptic-sh/lyr", "kryptic-sh/pikr", "kryptic-sh/tmxr",
+    "cargo:sqeel",
+]
+scoop_buckets = { kryptic-sh = "https://github.com/kryptic-sh/scoop-bucket" }

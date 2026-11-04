@@ -9,5 +9,4 @@ return {
     colorpicker = "hyprpicker --no-fancy --autocopy",
     screenshot  = "grimblast --notify --freeze copysave area",
     record      = "kooha",
-    notify      = "swaync-client",
 }
