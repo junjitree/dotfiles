@@ -380,6 +380,11 @@ dst = "${LOCAL_BIN}/.home-internet"
 src = ".local/bin/.kanata-layer"
 dst = "${LOCAL_BIN}/.kanata-layer"
 
+[[link]]
+src = ".local/bin/.lock-screen"
+dst = "${LOCAL_BIN}/.lock-screen"
+platform = "linux"
+
 # .menu-apps / .menu-audio / .menu-top wrappers removed — krypt's
 # `commands.toml` invokes the underlying tools (pikr, wiremix, btop)
 # directly.

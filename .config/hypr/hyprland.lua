@@ -183,8 +183,9 @@ hl.bind(mod .. " + return", hl.dsp.exec_cmd(apps.terminal), { description = "Ope
 -- File manager
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(apps.filemanager), { description = "Open file manager" })
 
--- Lock screen
-hl.bind(mod .. " + M", hl.dsp.exec_cmd(apps.lock), { description = "Lock screen" })
+-- Lock screen: through hypridle's lock_cmd, like idle and sleep, so the
+-- speakers mute while locked (~/.local/bin/.lock-screen)
+hl.bind(mod .. " + M", hl.dsp.exec_cmd("loginctl lock-session"), { description = "Lock screen" })
 
 -- Colorpicker
 hl.bind(mod .. " + CTRL + P", hl.dsp.exec_cmd(apps.colorpicker), { description = "Pick a color to the clipboard" })

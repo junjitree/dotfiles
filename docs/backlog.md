@@ -1,5 +1,22 @@
 # Backlog
 
+## Mute on lock — loose ends
+
+`.local/bin/.lock-screen` mutes the default sink while hyprlock runs and
+restores the previous mute state on unlock; hypridle's `lock_cmd` runs it and
+Super+M now calls `loginctl lock-session` so every lock goes through it.
+
+- **The `lock` field of the `hypr_apps` prompt is now unused.** Super+M was its
+  only caller. Each machine's generated `apps.lua` still sets `apps.lock`, and
+  `krypt setup` still asks for it. Drop the field from `.krypt.toml` and
+  `apps.template.lua`, or route `.lock-screen` through it, if a machine ever
+  needs a locker other than hyprlock.
+- **Not verified end to end with the real hyprlock.** The script was tested on
+  junji-pc with a stand-in `hyprlock` (mute while locked, restore after, an
+  already-muted sink stays muted, and a copy without the restore line fails). A
+  real lock and password unlock on each machine is the remaining check; hyprlock
+  0.9.6 did not unlock on `SIGUSR1`, so it could not be scripted.
+
 ## Hyprland Lua migration — per-machine leftovers
 
 The Lua config (`.config/hypr/hyprland.lua`) is live on junji-pc, the office box

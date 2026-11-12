@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# vi: ft=bash
+# Lock the screen with the speakers muted, so nothing plays to an empty room.
+# On unlock the speakers go back to how they were: a sink that was already
+# muted stays muted. hypridle's lock_cmd runs this, so every lock path (idle,
+# sleep, Super+M, the power menu) goes through it.
+
+sink=$(wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk 'NR == 1 { sub(",", "", $2); print $2 }')
+
+if [[ -n $sink ]]; then
+    was_muted=0
+    wpctl get-volume "$sink" | grep -q MUTED && was_muted=1
+    wpctl set-mute "$sink" 1
+fi
+
+hyprlock
+
+if [[ -n $sink && $was_muted == 0 ]]; then
+    wpctl set-mute "$sink" 0
+fi
